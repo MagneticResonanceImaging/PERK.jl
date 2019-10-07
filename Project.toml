@@ -1,7 +1,7 @@
 name = "PERK"
 uuid = "85f1910e-5d62-11e9-1bce-2b30a05932d4"
 authors = ["Steven Whitaker <stwhit@umich.edu>"]
-version = "0.0.2"
+version = "0.0.3"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
