@@ -123,7 +123,9 @@ function train(
 	y::AbstractArray{<:Real,2},
 	x::AbstractArray{<:AbstractArray{<:Number,1},1},
 	ν::AbstractArray{<:AbstractArray{<:Number,1},1},
-	kernel::Kernel
+	kernel::Kernel,
+    f::Union{Array{<:Real,2},Nothing} = nothing,
+    phase::Union{Array{<:Real,1},Nothing} = nothing
 )
 
 	# Combine the training data with the known parameters
@@ -137,20 +139,28 @@ function train(
 	x = transpose(reduce(hcat, x)) # [L,T]
 
 	# Train
-	return train(x, q, kernel)
+    if isnothing(f) || isnothing(phase)
+        return train(x, q, kernel)
+    else
+        return train(x, q, kernel, f, phase)
+    end
 
 end
 
 """
-    train(x, q, kernel)
+    train(x, q, kernel, [f, phase])
 
 Train PERK.
 
 # Arguments
 - `x::AbstractArray{<:Any,2}`: Latent parameters [L,T]
 - `q::AbstractArray{<:Any,2}`: Training data concatenated with known
-	parameters [D+K,T]
+  parameters [D+K,T]
 - `kernel::Kernel`: Kernel to use
+- `f::Array{<:Real,2} = randn(kernel.H, Q)`: Unscaled random frequency values
+  [H,Q] (used when `kernel isa RFFKernel`)
+- `phase::Array{<:Real,1} = rand(kernel.H)`: Random phase values [H] (used when
+  `kernel isa RFFKernel`)
 
 # Return
 - `trainData::TrainingData`: TrainingData object to be passed to `perk`
@@ -180,13 +190,25 @@ end
 function train(
 	x::AbstractArray{<:Any,2},
 	q::AbstractArray{<:Any,2},
-	kernel::RFFKernel
+	kernel::RFFKernel,
+    f::Union{Array{<:Real,2},Nothing} = nothing,
+    phase::Union{Array{<:Real,1},Nothing} = nothing
 )
 
 	# Use random Fourier features to approximate the kernel
-	(z, freq, phase) = kernel(q)
+    if isnothing(f) || isnothing(phase)
+	    (z, freq, phase) = kernel(q)
+    else
+        (z, freq, phase) = kernel(q, f, phase)
+    end
 
-	# Grab the number of training points
+	return train(x, z, freq, phase)
+
+end
+
+function train(x, z, freq, phase)
+
+    # Grab the number of training points
 	T = size(z, 2)
 
 	# Calculate sample means
