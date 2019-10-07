@@ -90,13 +90,15 @@ struct GaussianRFF{T1<:Integer,T2} <: RFFKernel
 end
 
 """
-    (k::GaussianRFF)(q)
+    (k::GaussianRFF)(q, [f, phase])
 
 Evaluate the approximate Gaussian kernel.
 
 # Arguments
 - `q::AbstractArray{<:Number,2}`: Input to kernel [Q,N]; Q is D+K, i.e.,
-    the number of data sets D plus the number of known parameters K
+  the number of data sets D plus the number of known parameters K
+- `f::Array{<:Real,2} = randn(k.H, Q)`: Unscaled random frequency values [H,Q]
+- `phase::Array{<:Real,1} = rand(k.H)`: Random phase values [H]
 
 # Return
 - `z::Array{<:Real,2}`: Higher-dimensional features [H,N]
@@ -108,13 +110,26 @@ function (k::GaussianRFF)(q::AbstractArray{<:Number,2})
     # Get the first dimension of q
     Q = size(q, 1)
 
+    # Generate random phase and unscaled frequency values
+    f = randn(k.H, Q)
+    phase = rand(k.H)
+
+    return k(q, f, phase)
+
+end
+
+function (k::GaussianRFF)(
+    q::AbstractArray{<:Number,2},
+    f::Array{<:Real,2},
+    phase::Array{<:Real,1}
+)
+
     # Construct the covariance matrix from which to draw the Gaussian samples
     # and take the square root
     sqrtΣ = Diagonal(div0.(1, 2π .* k.Λ))
 
-    # Generate random frequency and phase values
-    freq = randn(k.H, Q) * sqrtΣ
-    phase = rand(k.H)
+    # Scale the random frequency values
+    freq = f * sqrtΣ
 
     # Map the features to a higher dimensional space via random Fourier features
     # Also return freq and phase for use later
