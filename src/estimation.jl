@@ -94,17 +94,8 @@ function perk(
     t = @elapsed begin
         k = kernel(trainData.q, q) # [T,N]
         k .-= trainData.Km # [T,N]
-		# Add trainData.T * ρ to diagonal of trainData.K
-		for i = 1:size(trainData.K,1)+1:length(trainData.K)
-			trainData.K[i] += trainData.T * ρ
-		end
-		k .= trainData.K \ k # [T,N]
-        xhat = trainData.xm .+ trainData.x * k # [L,N]
-
-		# Undo modification of trainData
-		for i = 1:size(trainData.K,1)+1:length(trainData.K)
-			trainData.K[i] -= trainData.T * ρ
-		end
+        tmp = (trainData.K + trainData.T * ρ * I) \ k # [T,N]
+        xhat = trainData.xm .+ trainData.x * tmp # [L,N]
     end
 
     return (xhat, t)
@@ -121,17 +112,8 @@ function perk(
     t = @elapsed begin
         z = rffmap(q, trainData.freq, trainData.phase) # [H,N]
         z .-= trainData.zm # [H,N]
-		# Add ρ to diagonal of trainData.Czz
-		for i = 1:size(trainData.Czz,1)+1:length(trainData.Czz)
-			trainData.Czz[i] += ρ
-		end
-		z .= trainData.Czz \ z # [H,N]
-        xhat = trainData.xm .+ trainData.Cxz * z # [L,N]
-
-		# Undo modification of trainData
-		for i = 1:size(trainData.Czz,1)+1:length(trainData.Czz)
-			trainData.Czz[i] -= ρ
-		end
+        tmp = (trainData.Czz + ρ * I) \ z # [H,N]
+        xhat = trainData.xm .+ trainData.Cxz * tmp # [L,N]
     end
 
     return (xhat, t)
