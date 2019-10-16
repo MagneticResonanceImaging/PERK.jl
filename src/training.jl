@@ -132,11 +132,11 @@ function train(
 	if isempty(ν)
 		q = y # [D+K,T], K = 0
 	else
-		q = [y; transpose(reduce(hcat, ν))] # [D+K,T]
+		q = [y; transpose(hcat(ν...))] # [D+K,T]
 	end
 
 	# Reshape x
-	x = transpose(reduce(hcat, x)) # [L,T]
+	x = transpose(hcat(x...)) # [L,T]
 
 	# Train
     if isnothing(f) || isnothing(phase)
@@ -180,8 +180,8 @@ function train(
 
 	# De-mean the rows and columns of the kernel output
 	Km = dropdims(mean(K, dims = 2), dims = 2) # [T]
-	K .-= Km # [T,T]
-	K .-= mean(K, dims = 1) # [T,T]
+	K = K .- Km # [T,T]
+	K = K .- mean(K, dims = 1) # [T,T]
 
 	return ExactTrainingData(q, x, xm, K, Km)
 
@@ -217,7 +217,7 @@ function train(x, z, freq, phase)
 
 	# Calculate sample covariances
 	x = x .- xm # [L,T]
-	z .-= zm # [H,T]
+	z = z .- zm # [H,T]
 	Czz = div0.(z * z', T) # [H,H]
 	Cxz = div0.(x * z', T) # [L,H]
 

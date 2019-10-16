@@ -59,7 +59,7 @@ function perk(
 	if isempty(ν)
 		q = y # [D+K,N], K = 0 0 allocations
 	else
-		q = [y; transpose(reduce(hcat, ν))] # [D+K,N]
+		q = [y; transpose(hcat(ν...))] # [D+K,N]
 	end
 
 	(xhat, t) = perk(q, trainData, kernel, ρ) # [L,N]
@@ -93,7 +93,7 @@ function perk(
 
     t = @elapsed begin
         k = kernel(trainData.q, q) # [T,N]
-        k .-= trainData.Km # [T,N]
+        k = k .- trainData.Km # [T,N]
         tmp = (trainData.K + trainData.T * ρ * I) \ k # [T,N]
         xhat = trainData.xm .+ trainData.x * tmp # [L,N]
     end
@@ -111,7 +111,7 @@ function perk(
 
     t = @elapsed begin
         z = rffmap(q, trainData.freq, trainData.phase) # [H,N]
-        z .-= trainData.zm # [H,N]
+        z = z .- trainData.zm # [H,N]
         tmp = (trainData.Czz + ρ * I) \ z # [H,N]
         xhat = trainData.xm .+ trainData.Cxz * tmp # [L,N]
     end
