@@ -57,7 +57,7 @@ function perk(
 
 	# Concatenate the data and the known parameters
 	if isempty(ν)
-		q = y # [D+K,N], K = 0 0 allocations
+		q = y # [D+K,N], K = 0
 	else
 		q = [y; transpose(hcat(ν...))] # [D+K,N]
 	end
