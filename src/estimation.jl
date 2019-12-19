@@ -10,12 +10,12 @@ Train PERK and then estimate latent parameters.
 - `xDists::AbstractArray{<:Any,1}`: Distributions of latent parameters [L]
 - `νDists::AbstractArray{<:Any,1}`: Distributions of known parameters [K]
 - `noiseDist`: Distribution of noise (assumes same noise distribution for both
-    real and imaginary channels in complex case)
+  real and imaginary channels in complex case)
 - `signalModels::AbstractArray{<:Function,1}`: Signal models used to generate
-	noiseless data [numSignalModels]; each signal model accepts as inputs L
-	latent parameters (scalars) first, then K known parameters (scalars);
-	user-defined parameters (e.g., scan parameters in MRI) should be built into
-	the signal model
+  noiseless data [numSignalModels]; each signal model accepts as inputs L
+  latent parameters (scalars) first, then K known parameters (scalars);
+  user-defined parameters (e.g., scan parameters in MRI) should be built into
+  the signal model
 - `kernel::Kernel`: Kernel to use
 - `ρ::Real`: Regularization parameter
 
@@ -29,11 +29,11 @@ function perk(
     y::AbstractArray{<:Real,2},
     ν::AbstractArray{<:AbstractArray{<:Real,1},1},
     T::Integer,
-	xDists::AbstractArray{<:Any,1},
-	νDists::AbstractArray{<:Any,1},
-	noiseDist,
-	signalModels::AbstractArray{<:Function,1},
-	kernel::Kernel,
+    xDists::AbstractArray{<:Any,1},
+    νDists::AbstractArray{<:Any,1},
+    noiseDist,
+    signalModels::AbstractArray{<:Function,1},
+    kernel::Kernel,
     ρ::Real
 )
 
@@ -48,23 +48,23 @@ function perk(
 end
 
 function perk(
-	y::AbstractArray{<:Real,2},
-	ν::AbstractArray{<:AbstractArray{<:Real,1},1},
-	trainData::TrainingData,
-	kernel::Kernel,
-	ρ::Real
+    y::AbstractArray{<:Real,2},
+    ν::AbstractArray{<:AbstractArray{<:Real,1},1},
+    trainData::TrainingData,
+    kernel::Kernel,
+    ρ::Real
 )
 
-	# Concatenate the data and the known parameters
-	if isempty(ν)
-		q = y # [D+K,N], K = 0
-	else
-		q = [y; transpose(hcat(ν...))] # [D+K,N]
-	end
+    # Concatenate the data and the known parameters
+    if isempty(ν)
+        q = y # [D+K,N], K = 0
+    else
+        q = [y; transpose(hcat(ν...))] # [D+K,N]
+    end
 
-	(xhat, t) = perk(q, trainData, kernel, ρ) # [L,N]
+    (xhat, t) = perk(q, trainData, kernel, ρ) # [L,N]
 
-	return (xhat, t)
+    return (xhat, t)
 
 end
 
@@ -75,7 +75,7 @@ Estimate latent parameters using the provided training data.
 
 # Arguments
 - `q::AbstractArray{<:Real,2}`: Test data points concatenated with known
-    parameters [D+K,N]
+  parameters [D+K,N]
 - `trainData::TrainingData`: Training data
 - `kernel::Kernel`: Kernel to use
 - `ρ::Real`: Regularization parameter

@@ -40,7 +40,7 @@ Evaluate the Gaussian kernel.
 
 # Arguments
 - `q1::AbstractArray{<:Number,2}`: First input to kernel [Q,M]; Q is D+K, i.e.,
-    the number of data sets D plus the number of known parameters K
+  the number of data sets D plus the number of known parameters K
 - `q2::AbstractArray{<:Number,2}`: Second input to kernel [Q,N]
 
 # Return
