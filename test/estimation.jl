@@ -19,7 +19,7 @@ function test_perk_1()
     (xhat,) = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
     error_rel = abs(xhat[] - xtrue) / xtrue
     @show error_rel
-    return error_rel ≈ 0.02498437176144705
+    return isapprox(error_rel, 0.02498437176144705, atol = 1e-8)
 
 end
 
@@ -46,7 +46,7 @@ function test_perk_2()
     end
     error_rel_avg = sum(error_rel) / length(error_rel)
     @show error_rel_avg
-    return error_rel_avg ≈ 0.045074705837992585
+    return isapprox(error_rel_avg, 0.045074705837992585, atol = 1e-8)
 
 end
 
@@ -70,7 +70,7 @@ function test_perk_3()
     (xhat,) = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
     error_rel = abs(xhat[] - xtrue) / xtrue
     @show error_rel
-    return error_rel ≈ 0.05798742886313903
+    return isapprox(error_rel, 0.05798742886313903, atol = 1e-8)
 
 end
 
@@ -98,7 +98,7 @@ function test_perk_4()
     end
     error_rel_avg = sum(error_rel) / length(error_rel)
     @show error_rel_avg
-    return error_rel_avg ≈ 0.05810872611593427
+    return isapprox(error_rel_avg, 0.05810872611593427, atol = 1e-8)
 
 end
 
@@ -121,7 +121,7 @@ function test_perk_5()
     (xhat,) = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
     error_rel = abs(xhat[] - xtrue) / xtrue
     @show error_rel
-    return error_rel ≈ 0.011599576402842331
+    return isapprox(error_rel, 0.011599576402842331, atol = 1e-8)
 
 end
 
