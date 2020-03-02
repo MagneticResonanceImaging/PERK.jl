@@ -2,10 +2,11 @@ using PERK, Test, Random, Distributions
 
 function test_holdout_1()
 
+    Random.seed!(0)
     N = 10
     T = 200
-    λvals = [1, Inf]
-    ρvals = [1, Inf]
+    λvals = [1, 2]
+    ρvals = [1, 2]
     weights = [1]
     xDistsTest = [Uniform(100, 100.000000001)]
     νDistsTest = [Uniform(30, 30.000000001)]
@@ -18,7 +19,7 @@ function test_holdout_1()
                              νDistsTest, xDistsTrain, νDistsTrain, noiseDist,
                              signalModels, kernelgenerator, showprogress = true)
     @show Ψ
-    return λ == 1 && ρ == 1
+    return λ == 2 && ρ == 1
 
 end
 
