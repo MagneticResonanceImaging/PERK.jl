@@ -19,7 +19,7 @@ function test_perk_1()
     (xhat,) = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
     error_rel = abs(xhat[] - xtrue) / xtrue
     @show error_rel
-    return true
+    return error_rel ≈ 0.02498437176144705
 
 end
 
@@ -46,7 +46,7 @@ function test_perk_2()
     end
     error_rel_avg = sum(error_rel) / length(error_rel)
     @show error_rel_avg
-    return true
+    return error_rel_avg ≈ 0.045074705837992585
 
 end
 
@@ -64,12 +64,13 @@ function test_perk_3()
     noiseDist = Normal(0, 0.01)
     signalModels = [f]
     λ = 2.0^-1.5
-    kernel = GaussianRFF(100, [λ * mean(y)])
+    H = 100
+    kernel = GaussianRFF(H, [λ * mean(y)])
     ρ = 2.0^-20
     (xhat,) = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
     error_rel = abs(xhat[] - xtrue) / xtrue
     @show error_rel
-    return true
+    return error_rel ≈ 0.05798742886313903
 
 end
 
@@ -87,16 +88,40 @@ function test_perk_4()
     signalModels = [f]
     λ = 2.0^-1.5
     ρ = 2.0^-20
+    H = 100
     error_rel = zeros(length(xtrue))
     for i = 1:length(xtrue)
         y = fill(f(xtrue[i]), 1, N)
-        kernel = GaussianRFF(100, [λ * mean(y)])
+        kernel = GaussianRFF(H, [λ * mean(y)])
         (xhat,) = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
         error_rel[i] = abs(xhat[] - xtrue[i]) / xtrue[i]
     end
     error_rel_avg = sum(error_rel) / length(error_rel)
     @show error_rel_avg
-    return true
+    return error_rel_avg ≈ 0.05810872611593427
+
+end
+
+function test_perk_5()
+
+    Random.seed!(0)
+    f = (x, ν) -> exp(-ν / x)
+    xtrue = 100
+    ν = [[30]]
+    N = 1
+    y = fill(f(xtrue, ν[][]), 1, N)
+    T = 200
+    xDists = [Uniform(10, 500)]
+    νDists = [Uniform(30, 30.000000001)]
+    noiseDist = Normal(0, 0.01)
+    signalModels = [f]
+    λ = 2.0^-1.5
+    kernel = GaussianKernel([λ * mean(y)])
+    ρ = 2.0^-20
+    (xhat,) = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
+    error_rel = abs(xhat[] - xtrue) / xtrue
+    @show error_rel
+    return error_rel ≈ 0.011599576402842331
 
 end
 
@@ -106,5 +131,6 @@ end
     @test test_perk_2()
     @test test_perk_3()
     @test test_perk_4()
+    @test test_perk_5()
 
 end

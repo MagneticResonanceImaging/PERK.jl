@@ -29,8 +29,6 @@ Select λ and ρ via a holdout process.
 - `kernelgenerator::Function`: Function that creates a `Kernel` object given a
   vector `Λ` of lengthscales
 - `showprogress::Bool = false`: Whether to show progress
-- `logfile::String = ""`: File in which to output progress (if `showprogress` is
-  set); default `""` indicates to output to the terminal
 
 # Return
 - `λ::Real`: Bandwidth scaling parameter
@@ -50,8 +48,7 @@ function holdout(
     noiseDist,
     signalModels::AbstractArray{<:Function,1},
     kernelgenerator::Function;
-    showprogress::Bool = false,
-    logfile::String = ""
+    showprogress::Bool = false
 )
 
     # Generate synthetic test data
@@ -67,15 +64,7 @@ function holdout(
     Ψ  = zeros(nλ, nρ)
     for idxλ = 1:nλ
 
-        if showprogress
-            if logfile == ""
-                println("idxλ = $idxλ/$nλ")
-            else
-                open(logfile, "a") do f
-                    write(f, "idxλ = $idxλ/$nλ\n")
-                end
-            end
-        end
+        showprogress && println("idxλ = $idxλ/$nλ")
 
         λ = λvals[idxλ]
 
@@ -91,20 +80,12 @@ function holdout(
         kernel = kernelgenerator(Λ)
 
         # Train PERK
-        (trainData,) = train(T, xDistsTrain, νDistsTrain, noiseDist,
-                             signalModels, kernel)
+        trainData = train(T, xDistsTrain, νDistsTrain, noiseDist,
+                          signalModels, kernel)
 
         for idxρ = 1:nρ
 
-            if showprogress
-                if logfile == ""
-                    println("    idxρ = $idxρ/$nρ")
-                else
-                    open(logfile, "a") do f
-                        write(f, "    idxρ = $idxρ/$nρ\n")
-                    end
-                end
-            end
+            showprogress && println("    idxρ = $idxρ/$nρ")
 
             ρ = ρvals[idxρ]
 
