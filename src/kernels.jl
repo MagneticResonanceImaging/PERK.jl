@@ -144,7 +144,7 @@ Create an approximate (via random Fourier features) Gaussian kernel function.
 - `Λ::Union{<:Real,AbstractVector{<:Real}}`: Length scales [Q] or scalar (if
   Q = 1)
 """
-struct GaussianRFF{T1<:Integer,T2<:Union{<:Real,<:AbstractVector{<:Real}} <: RFFKernel
+struct GaussianRFF{T1<:Integer,T2<:Union{<:Real,<:AbstractVector{<:Real}}} <: RFFKernel
     H::T1
     Λ::T2
 end

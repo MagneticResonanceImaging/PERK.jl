@@ -5,12 +5,12 @@ Train kernel ridge regression.
 
 # Arguments
 - `xtrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Latent
-  parameters for training data [L,T] or [T] (when L = 1)
+  parameters for training data [L,T] or [T] (if L = 1)
 - `ytrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Features
-  for training data [Q,T] or [T] (when Q = 1)
+  for training data [Q,T] or [T] (if Q = 1)
 - `kernel::Kernel`: Kernel to use
 - `f::Union{<:AbstractVector{<:Real},AbstractMatrix{<:Real}} = randn(kernel.H, Q)`:
-  Unscaled random frequency values [H,Q] or [H] (when Q = 1) (used when
+  Unscaled random frequency values [H,Q] or [H] (if Q = 1) (used when
   `kernel isa RFFKernel`)
 - `phase::AbstractVector{<:Real} = rand(kernel.H)`: Random phase values [H]
   (used when `kernel isa RFFKernel`)
@@ -162,7 +162,8 @@ Predict latent parameters that generated `ytest` using kernel ridge regression.
 
 # Return
 - `xhat::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`:
-  Estimated latent parameters [L,N] or [L] (if N = 1) or scalar (if L = N = 1)
+  Estimated latent parameters [L,N] or [N] (if L = 1) or [L] (if N = 1) or
+  scalar (if L = N = 1)
 """
 function krr(
     ytest::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
@@ -174,7 +175,13 @@ function krr(
     k = kernel(trainData.y, ytest) # [T,N] or [T]
     k = k .- trainData.Km # [T,N] or [T]
     tmp = (trainData.K + trainData.T * ρ * I) \ k # [T,N] or [T]
-    xhat = trainData.xm .+ trainData.x * tmp # [L,N] or [L] or scalar TODO: Dispatch on type of trainData.x to know when to transpose
+
+    # Check if L = 1
+    if trainData isa ExactTrainingData{<:Any,<:AbstractVector,<:Any,<:Any,<:Any}
+        xhat = trainData.xm .+ transpose(tmp) * trainData.x # [N] or scalar
+    else
+        xhat = trainData.xm .+ trainData.x * tmp # [L,N] or [L]
+    end
 
     return xhat
 
@@ -183,14 +190,20 @@ end
 function krr(
     ytest::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     trainData::RFFTrainingData,
-    ::ExactKernel,
+    ::RFFKernel,
     ρ::Real
 )
 
     z = rffmap(ytest, trainData.freq, trainData.phase) # [H,N] or [H]
     z = z .- trainData.zm # [H,N] or [H]
     tmp = (trainData.Czz + ρ * I) \ z # [H,N] or [H]
-    xhat = trainData.xm .+ trainData.Cxz * tmp # [L,N] or [L] or scalar TODO: Dispatch on type of trainData.Cxz to know when to transpose
+
+    # Check if L = 1
+    if trainData isa RFFTrainingData{<:Any,<:Any,<:Any,<:Any,<:Any,<:AbstractVector}
+        xhat = trainData.xm .+ transpose(tmp) * trainData.Cxz # [N] or scalar
+    else
+        xhat = trainData.xm .+ trainData.Cxz * tmp # [L,N] or [L]
+    end
 
     return xhat
 

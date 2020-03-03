@@ -6,36 +6,46 @@ Abstract type for representing training data.
 abstract type TrainingData end
 
 """
-    ExactTrainingData(q, x, xm, K, Km) <: TrainingData
+    ExactTrainingData(y, x, xm, K, Km) <: TrainingData
 
 Create an object that contains the training data when using the full Gram matrix
 K.
 
 # Properties
-- `q::Array{<:Any,2}`: Training values y concatenated with known parameters ν
-  [Q,T]
-- `x::Array{<:Any,2}`: De-meaned latent parameters [L,T]
-- `xm::Array{<:Any,1}`: Mean of latent parameters [L]
-- `K::Array{<:Any,2}`: De-meaned (both rows and columns) Gram matrix of the
-  kernel evaluated on the training data `q` [T,T]
-- `Km::Array{<:Any,1}`: Row means of `K` (before de-meaning) [T]
-- `Q::Int`: Number of training values y plus the number of known parameters ν
-- `L::Int`: Number of latent parameters x
-- `T::Int`: Number of training points
+- `y::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Features for
+  training data [Q,T] or [T] (if Q = 1)
+- `x::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Latent
+  parameters for training data [L,T] or [T] (if L = 1)
+- `xm::Union{<:Real,<:AbstractVector{<:Real}}`: Mean of latent parameters [L] or
+  scalar (if L = 1)
+- `K::AbstractMatrix{<:Real}`: De-meaned (both rows and columns) Gram matrix of
+  the kernel evaluated on the training data features [T,T]
+- `Km::AbstractVector{<:Real}`: Row means of `K` (before de-meaning) [T]
+- `Q::Integer`: Number of training features
+- `L::Integer`: Number of latent parameters
+- `T::Integer`: Number of training points
 """
-struct ExactTrainingData{T1,T2,T3,T4,T5} <: TrainingData
-    q::Array{T1,2}
-    x::Array{T2,2}
-    xm::Array{T3,1}
-    K::Array{T4,2}
-    Km::Array{T5,1}
+struct ExactTrainingData{
+    T1<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    T2<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    T3<:Union{<:Real,<:AbstractVector{<:Real}},
+    T4<:AbstractMatrix{<:Real},
+    T5<:AbstractVector{<:Real}
+} <: TrainingData
+    y::T1
+    x::T2
+    xm::T3
+    K::T4
+    Km::T5
 end
 
 Base.getproperty(data::ExactTrainingData, s::Symbol) = begin
     if s == :Q
-        return size(getfield(data, :q), 1)
+        y = getfield(data, :y)
+        return ndims(y) == 1 ? 1 : size(y, 1)
     elseif s == :L
-        return size(getfield(data, :x), 1)
+        x = getfield(data, :x)
+        return ndims(x) == 1 ? 1 : size(x, 1)
     elseif s == :T
         return length(getfield(data, :Km))
     else
@@ -50,32 +60,43 @@ Create an object that contains the training data when using an approximation of
 the Gram matrix K using random Fourier features.
 
 # Properties
-- `freq::Array{<:Any,2}`: Random frequency values for random Fourier features
-  [H,Q]
-- `phase::Array{<:Any,1}`: Random phase values for random Fourier features [H]
-- `zm::Array{<:Any,1}`: Mean of feature maps [H]
-- `xm::Array{<:Any,1}`: Mean of latent parameters [L]
-- `Czz::Array{<:Any,2}`: Auto-covariance matrix of feature maps [H,H]
-- `Cxz::Array{<:Any,2}`: Cross-covariance matrix between latent parameters and
-  feature maps [L,H]
-- `Q::Int`: Number of training values y plus the number of known parameters ν
-- `L::Int`: Number of latent parameters x
-- `H::Int`: Kernel approximation order
+- `freq::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Random
+  frequency values for random Fourier features [H,Q] or [H] (if Q = 1)
+- `phase::AbstractVector{<:Real}`: Random phase values for random Fourier
+  features [H]
+- `zm::AbstractVector{<:Real}`: Mean of feature maps [H]
+- `xm::Union{<:Real,<:AbstractVector{<:Real}}`: Mean of latent parameters [L]
+  or scalar (if L = 1)
+- `Czz::AbstractMatrix{<:Real}`: Auto-covariance matrix of feature maps [H,H]
+- `Cxz::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`:
+  Cross-covariance matrix between latent parameters and feature maps [L,H] or
+  [H] (if L = 1)
+- `Q::Integer`: Number of training features
+- `L::Integer`: Number of latent parameters
+- `H::Integer`: Kernel approximation order
 """
-struct RFFTrainingData{T1,T2,T3,T4,T5,T6} <: TrainingData
-    freq::Array{T1,2}
-    phase::Array{T2,1}
-    zm::Array{T3,1}
-    xm::Array{T4,1}
-    Czz::Array{T5,2}
-    Cxz::Array{T6,2}
+struct RFFTrainingData{
+    T1<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    T2<:AbstractVector{<:Real},
+    T3<:AbstractVector{<:Real},
+    T4<:Union{<:Real,<:AbstractVector{<:Real}},
+    T5<:AbstractMatrix{<:Real},
+    T6<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}
+} <: TrainingData
+    freq::T1
+    phase::T2
+    zm::T3
+    xm::T4
+    Czz::T5
+    Cxz::T6
 end
 
 Base.getproperty(data::RFFTrainingData, s::Symbol) = begin
     if s == :Q
-        return size(getfield(data, :freq), 2)
+        freq = getfield(data, :freq)
+        return ndims(freq) == 1 ? 1 : size(freq, 2)
     elseif s == :L
-        return size(getfield(data, :Cxz), 1)
+        return length(getfield(data, :xm))
     elseif s == :H
         return length(getfield(data, :zm))
     else
