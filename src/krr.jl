@@ -25,30 +25,59 @@ Train kernel ridge regression.
 - `trainData::TrainingData`: `TrainingData` object to be passed to `krr`
 """
 function krr_train(
-    xtrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    xtrain::AbstractVector{<:Real},
     ytrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     kernel::ExactKernel
 )
-
-    # TODO: Don't make both matrices, instead dispatch and allow different TrainingData objects
-    # Make both xtrain and ytrain matrices
-    # This should be type stable, assuming permutedims is type stable
-    isa(xtrain, AbstractVector) && (xtrain = permutedims(xtrain)) # [L=1,T]
-    isa(ytrain, AbstractVector) && (ytrain = permutedims(ytrain)) # [Q=1,T]
 
     # Evaluate the kernel on the training features
     K = kernel(ytrain, ytrain) # [T,T]
 
     # Calculate the sample mean and de-mean the latent parameters
-    xm = dropdims(mean(xtrain, dims = 2), dims = 2) # [L]
-    x = x .- xm # [L,T]
+    xm = mean(xtrain) # scalar (L = 1)
+    xtrain = xtrain .- xm # [T]
 
     # De-mean the rows and columns of the kernel output
     Km = dropdims(mean(K, dims = 2), dims = 2) # [T]
     K = K .- Km # [T,T]
     K = K .- mean(K, dims = 1) # [T,T]
 
-    return ExactTrainingData(q, x, xm, K, Km)
+    return ExactTrainingData(ytrain, xtrain, xm, K, Km)
+
+end
+
+function krr_train(
+    xtrain::AbstractMatrix{<:Real},
+    ytrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    kernel::ExactKernel
+)
+
+    # Evaluate the kernel on the training features
+    K = kernel(ytrain, ytrain) # [T,T]
+
+    # Calculate the sample mean and de-mean the latent parameters
+    xm = dropdims(mean(xtrain, dims = 2), dims = 2) # [L]
+    xtrain = xtrain .- xm # [L,T]
+
+    # De-mean the rows and columns of the kernel output
+    Km = dropdims(mean(K, dims = 2), dims = 2) # [T]
+    K = K .- Km # [T,T]
+    K = K .- mean(K, dims = 1) # [T,T]
+
+    return ExactTrainingData(ytrain, xtrain, xm, K, Km)
+
+end
+
+function krr_train(
+    xtrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    ytrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    kernel::RFFKernel
+)
+
+    # Use random Fourier features to approximate the kernel
+    (z, freq, phase) = kernel(ytrain)
+
+    return _krr_train(xtrain, z, freq, phase)
 
 end
 
@@ -56,23 +85,38 @@ function krr_train(
     xtrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     ytrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     kernel::RFFKernel,
-    f::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real},Nothing} = nothing,
-    phase::Union{<:AbstractVector{<:Real},Nothing} = nothing
+    f::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    phase::AbstractVector{<:Real}
 )
 
-    # Make xtrain, ytrain, and f matrices
-    isa(xtrain, AbstractVector) && (xtrain = permutedims(xtrain)) # [L=1,T]
-    isa(ytrain, AbstractVector) && (ytrain = permutedims(ytrain)) # [Q=1,T]
-    isa(f, AbstractVector) && (f = reshape(f, :, 1)) # [H,Q=1]
-
     # Use random Fourier features to approximate the kernel
-    if isnothing(f) || isnothing(phase)
-        (z, freq, phase) = kernel(ytrain)
-    else
-        (z, freq, phase) = kernel(ytrain, f, phase)
-    end
+    (z, freq, phase) = kernel(ytrain, f, phase)
 
     return _krr_train(xtrain, z, freq, phase)
+
+end
+
+function _krr_train(
+    xtrain::AbstractVector{<:Real}, # [T]
+    z::AbstractMatrix{<:Real}, # [H,T]
+    freq::AbstractMatrix{<:Real}, # [H,Q]
+    phase::AbstractVector{<:Real} # [H]
+)
+
+    # Grab the number of training points
+    T = size(z, 2)
+
+    # Calculate sample means
+    xm = mean(xtrain) # scalar (L = 1)
+    zm = dropdims(mean(z, dims = 2), dims = 2) # [H]
+
+    # Calculate sample covariances
+    xtrain = xtrain .- xm # [T]
+    z = z .- zm # [H,T]
+    Czz = div0.(z * z', T) # [H,H]
+    Cxz = div0.(z * xtrain, T) # [H]
+
+    return RFFTrainingData(freq, phase, zm, xm, Czz, Cxz)
 
 end
 
@@ -91,10 +135,10 @@ function _krr_train(
     zm = dropdims(mean(z, dims = 2), dims = 2) # [H]
 
     # Calculate sample covariances
-    x = x .- xm # [L,T]
+    xtrain = xtrain .- xm # [L,T]
     z = z .- zm # [H,T]
     Czz = div0.(z * z', T) # [H,H]
-    Cxz = div0.(x * z', T) # [L,H]
+    Cxz = div0.(xtrain * z', T) # [L,H]
 
     return RFFTrainingData(freq, phase, zm, xm, Czz, Cxz)
 
@@ -107,7 +151,7 @@ Predict latent parameters that generated `ytest` using kernel ridge regression.
 
 # Arguments
 - `ytest::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`:
-  Observed test data [Q,N] or [Q] (if N = 1) or scalar (if Q = N = 1)
+  Observed test data [Q,N] or [N] (if Q = 1) or scalar (if Q = N = 1)
 - `trainData::TrainingData`: Training data
 - `kernel::Kernel`: Kernel to use
 - `ρ::Real`: Tikhonov regularization parameter
@@ -130,7 +174,7 @@ function krr(
     k = kernel(trainData.y, ytest) # [T,N] or [T]
     k = k .- trainData.Km # [T,N] or [T]
     tmp = (trainData.K + trainData.T * ρ * I) \ k # [T,N] or [T]
-    xhat = trainData.xm .+ trainData.x * tmp # [L,N] or [L] or scalar TODO: Modify TrainingData to allow for scalars
+    xhat = trainData.xm .+ trainData.x * tmp # [L,N] or [L] or scalar TODO: Dispatch on type of trainData.x to know when to transpose
 
     return xhat
 
@@ -146,7 +190,7 @@ function krr(
     z = rffmap(ytest, trainData.freq, trainData.phase) # [H,N] or [H]
     z = z .- trainData.zm # [H,N] or [H]
     tmp = (trainData.Czz + ρ * I) \ z # [H,N] or [H]
-    xhat = trainData.xm .+ trainData.Cxz * tmp # [L,N] or [L] or scalar TODO: See above
+    xhat = trainData.xm .+ trainData.Cxz * tmp # [L,N] or [L] or scalar TODO: Dispatch on type of trainData.Cxz to know when to transpose
 
     return xhat
 
