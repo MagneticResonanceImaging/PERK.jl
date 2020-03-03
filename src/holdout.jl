@@ -1,6 +1,6 @@
 """
     holdout(N, T, λvals, ρvals, weights, xDistsTest, νDistsTest, xDistsTrain,
-            νDistsTrain, noiseDist,	signalModels, kernelgenerator; showprogress,
+            νDistsTrain, noiseDist, signalModels, kernelgenerator; showprogress,
             logfile)
 
 Select λ and ρ via a holdout process.

@@ -202,6 +202,33 @@ function combine(
 
 end
 
+function combine(
+    y::Real,
+    ν::Real
+)
+
+    return transpose([y ν])
+
+end
+
+function combine(
+    y::AbstractMatrix{<:Real}, # [D,1]
+    ν::Real
+)
+
+    return [y; ν]
+
+end
+
+function combine(
+    y::Real
+    ν::AbstractMatrix{<:Real}, # [K,1]
+)
+
+    return [y; ν]
+
+end
+
 """
     generatenoisydata(N, xDists, [νDists,] noiseDist, signalModels)
 

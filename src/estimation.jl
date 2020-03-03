@@ -1,121 +1,112 @@
 """
-    perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
+    perk(y, [ν,] T, xDists, [νDists,] noiseDist, signalModels, kernel, ρ)
 
 Train PERK and then estimate latent parameters.
 
 # Arguments
-- `y::AbstractArray{<:Real,2}`: Test data points [D,N]
-- `ν::AbstractArray{<:AbstractArray{<:Real,1},1}`: Known parameters [K][N]
+- `y::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Test
+  data points [D,N] or [N] (if D = 1) or scalar (if D = N = 1)
+- `ν::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Known
+  parameters [K,N] or [N] (if K = 1) or scalar (if K = N = 1); omit this
+  parameter if K = 0
 - `T::Integer`: Number of training points
-- `xDists::AbstractArray{<:Any,1}`: Distributions of latent parameters [L]
-- `νDists::AbstractArray{<:Any,1}`: Distributions of known parameters [K]
+- `xDists`: Distributions of latent parameters [L] or scalar (if L = 1);
+  `xDists` can be any object such that `rand(xDists, ::Integer)` is defined (or
+  a collection of such objects)
+- `νDists`: Distributions of known parameters [K] or scalar (if K = 1);
+  `νDists` can be any object such that `rand(νDists, ::Integer)` is defined (or
+  a collection of such objects); omit this parameter if K = 0
 - `noiseDist`: Distribution of noise (assumes same noise distribution for both
-  real and imaginary channels in complex case)
-- `signalModels::AbstractArray{<:Function,1}`: Signal models used to generate
-  noiseless data [numSignalModels]; each signal model accepts as inputs L
-  latent parameters (scalars) first, then K known parameters (scalars);
-  user-defined parameters (e.g., scan parameters in MRI) should be built into
-  the signal model
+  real and imaginary channels in complex case); `noiseDist` can be any object
+  such that `rand(noiseDist, ::Integer)` is defined
+- `signalModels::Union{<:Function,<:AbstractVector{<:Function}}`: Signal models
+  used to generate noiseless data [numSignalModels]; each signal model accepts
+  as inputs L latent parameters (scalars) first, then K known parameters
+  (scalars); user-defined parameters (e.g., scan parameters in MRI) should be
+  built into the signal model
 - `kernel::Kernel`: Kernel to use
-- `ρ::Real`: Regularization parameter
+- `ρ::Real`: Tikhonov regularization parameter
 
 # Return
-- `xhat::Array{<:Real,2}`: Estimated latent parameters [L,N]
-- `trainData::TrainingData`: Training data
-- `ttrain::Real`: Duration of training (s)
-- `ttest::Real`: Duration of testing (s)
+- `xhat::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`:
+  Estimated latent parameters [L,N] or [N] (if L = 1) or [L] (if N = 1) or
+  scalar (if L = N = 1)
 """
 function perk(
-    y::AbstractArray{<:Real,2},
-    ν::AbstractArray{<:AbstractArray{<:Real,1},1},
+    y::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     T::Integer,
-    xDists::AbstractArray{<:Any,1},
-    νDists::AbstractArray{<:Any,1},
+    xDists,
     noiseDist,
-    signalModels::AbstractArray{<:Function,1},
+    signalModels::Union{<:Function,<:AbstractVector{<:Function}},
     kernel::Kernel,
     ρ::Real
 )
 
-    ttrain = @elapsed begin
-        trainData = train(T, xDists, νDists, noiseDist, signalModels, kernel)
-    end
+    trainData = train(T, xDists, noiseDist, signalModels, kernel)
 
-    (xhat, ttest) = perk(y, ν, trainData, kernel, ρ) # [L,N]
-
-    return (xhat, trainData, ttrain, ttest)
+    return perk(y, ν, trainData, kernel, ρ)
 
 end
 
 function perk(
-    y::AbstractArray{<:Real,2},
-    ν::AbstractArray{<:AbstractArray{<:Real,1},1},
+    y::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    ν::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    T::Integer,
+    xDists,
+    νDists,
+    noiseDist,
+    signalModels::Union{<:Function,<:AbstractVector{<:Function}},
+    kernel::Kernel,
+    ρ::Real
+)
+
+    trainData = train(T, xDists, νDists, noiseDist, signalModels, kernel)
+
+    return perk(y, ν, trainData, kernel, ρ)
+
+end
+
+"""
+    perk(y, [ν,] trainData, kernel, ρ)
+
+Estimate latent parameters using the provided training data.
+
+# Arguments
+- `y::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Test
+  data points [D,N] or [N] (if D = 1) or scalar (if D = N = 1)
+- `ν::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Known
+  parameters [K,N] or [N] (if K = 1) or scalar (if K = N = 1); omit this
+  parameter if K = 0
+- `trainData::TrainingData`: Training data
+- `kernel::Kernel`: Kernel to use
+- `ρ::Real`: Tikhonov regularization parameter
+
+# Return
+- `xhat::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`:
+  Estimated latent parameters [L,N] or [N] (if L = 1) or [L] (if N = 1) or
+  scalar (if L = N = 1)
+"""
+function perk(
+    y::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     trainData::TrainingData,
     kernel::Kernel,
     ρ::Real
 )
 
-    # Concatenate the data and the known parameters
-    if isempty(ν)
-        q = y # [D+K,N], K = 0
-    else
-        q = [y; transpose(hcat(ν...))] # [D+K,N]
-    end
-
-    (xhat, t) = perk(q, trainData, kernel, ρ) # [L,N]
-
-    return (xhat, t)
-
-end
-
-"""
-    perk(q, trainData, kernel, ρ)
-
-Estimate latent parameters using the provided training data.
-
-# Arguments
-- `q::AbstractArray{<:Real,2}`: Test data points concatenated with known
-  parameters [D+K,N]
-- `trainData::TrainingData`: Training data
-- `kernel::Kernel`: Kernel to use
-- `ρ::Real`: Regularization parameter
-
-# Return
-- `xhat::Array{<:Real,2}`: Estimated latent parameters [L,N]
-- `t::Real`: Duration of testing (s)
-"""
-function perk(
-    q::AbstractArray{<:Real,2},
-    trainData::ExactTrainingData,
-    kernel::ExactKernel,
-    ρ::Real
-)
-
-    t = @elapsed begin
-        k = kernel(trainData.q, q) # [T,N]
-        k = k .- trainData.Km # [T,N]
-        tmp = (trainData.K + trainData.T * ρ * I) \ k # [T,N]
-        xhat = trainData.xm .+ trainData.x * tmp # [L,N]
-    end
-
-    return (xhat, t)
+    return krr(y, trainData, kernel, ρ)
 
 end
 
 function perk(
-    q::AbstractArray{<:Real,2},
-    trainData::RFFTrainingData,
-    ::RFFKernel,
+    y::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    ν::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    trainData::TrainingData,
+    kernel::Kernel,
     ρ::Real
 )
 
-    t = @elapsed begin
-        z = rffmap(q, trainData.freq, trainData.phase) # [H,N]
-        z = z .- trainData.zm # [H,N]
-        tmp = (trainData.Czz + ρ * I) \ z # [H,N]
-        xhat = trainData.xm .+ trainData.Cxz * tmp # [L,N]
-    end
+    q = combine(y, ν)
 
-    return (xhat, t)
+    return krr(q, trainData, kernel, ρ)
 
 end

@@ -22,6 +22,79 @@ features. `RFFKernel`s must be callable with one or three inputs.
 abstract type RFFKernel <: Kernel end
 
 """
+    EuclideanKernel() <: ExactKernel
+
+Create a kernel function where the kernel is just the Euclidean inner product
+(i.e., ridge regression).
+"""
+struct EuclideanKernel <: ExactKernel end
+
+"""
+    (k::EuclideanKernel)(p, q)
+
+Evaluate the Euclidean inner product between `p` and `q`.
+
+# Arguments
+- `p::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: First
+  kernel input [Q,M] or [M] (if Q = 1) or scalar (if Q = M = 1)
+- `q::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Second
+  kernel input [Q,N] or [N] (if Q = 1) or scalar (if Q = N = 1)
+
+# Return
+- `K::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Kernel
+  output [M,N] or [M] (if N = 1) or [N] (if M = 1) or scalar (if M = N = 1)
+"""
+function (k::EuclideanKernel)(
+    p::AbstractMatrix{<:Real},
+    q::AbstractMatrix{<:Real}
+)
+
+    # Get the sizes of p and q
+    M = size(p, 2)
+    N = size(q, 2)
+
+    # Compute the kernel function
+    return [p[:,m]' * q[:,n] for m = 1:M, n = 1:N]
+
+end
+
+function (k::EuclideanKernel)(
+    p::AbstractVector{<:Real},
+    q::AbstractVector{<:Real}
+)
+
+    return p * q'
+
+end
+
+function (k::EuclideanKernel)(
+    p::AbstractVector{<:Real},
+    q::Real
+)
+
+    return p * q'
+
+end
+
+function (k::EuclideanKernel)(
+    p::Real,
+    q::AbstractVector{<:Real}
+)
+
+    return p * conj(q)
+
+end
+
+function (k::EuclideanKernel)(
+    p::Real,
+    q::Real
+)
+
+    return p * q'
+
+end
+
+"""
     GaussianKernel(Λ) <: ExactKernel
 
 Create a Gaussian kernel function.
