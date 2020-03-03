@@ -99,7 +99,7 @@ end
 function _krr_train(
     xtrain::AbstractVector{<:Real}, # [T]
     z::AbstractMatrix{<:Real}, # [H,T]
-    freq::AbstractMatrix{<:Real}, # [H,Q]
+    freq::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}, # [H,Q] or [H]
     phase::AbstractVector{<:Real} # [H]
 )
 
@@ -123,7 +123,7 @@ end
 function _krr_train(
     xtrain::AbstractMatrix{<:Real}, # [L,T]
     z::AbstractMatrix{<:Real}, # [H,T]
-    freq::AbstractMatrix{<:Real}, # [H,Q]
+    freq::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}, # [H,Q] or [H]
     phase::AbstractVector{<:Real} # [H]
 )
 

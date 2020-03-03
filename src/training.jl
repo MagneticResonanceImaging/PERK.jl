@@ -140,7 +140,7 @@ function train(
 
     (y, x) = generatenoisydata(T, xDists, noiseDist, signalModels)
 
-    return krr_train(y, x, kernel)
+    return krr_train(x, y, kernel)
 
 end
 
@@ -157,7 +157,7 @@ function train(
 
     q = combine(y, ν) # [D+K,T]
 
-    return krr_train(q, x, kernel)
+    return krr_train(x, q, kernel)
 
 end
 
@@ -221,8 +221,8 @@ function combine(
 end
 
 function combine(
-    y::Real
-    ν::AbstractMatrix{<:Real}, # [K,1]
+    y::Real,
+    ν::AbstractMatrix{<:Real} # [K,1]
 )
 
     return [y; ν]
@@ -275,12 +275,7 @@ function generatenoisydata(
     end
 
     # Generate the data
-    if signalModels isa AbstractVector
-        y = reduce(vcat, (reduce(hcat, signalModels[i].(x...))
-            for i = 1:length(signalModels))) # [D,N]
-    else
-        y = reduce(hcat, signalModels.(x...)) # [D,N]
-    end
+    y = _evaluate_signalModels(x, signalModels)
     size(y, 1) == 1 && (y = vec(y)) # [N] (if D = 1)
     addnoise!(y, noiseDist)
 
@@ -313,12 +308,7 @@ function generatenoisydata(
     end
 
     # Generate the data
-    if signalModels isa AbstractVector
-        y = reduce(vcat, (reduce(hcat, signalModels[i].(x..., ν...))
-            for i = 1:length(signalModels))) # [D,N]
-    else
-        y = reduce(hcat, signalModels.(x..., ν...)) # [D,N]
-    end
+    y = _evaluate_signalModels(x, ν, signalModels)
     size(y, 1) == 1 && (y = vec(y)) # [N] (if D = 1)
     addnoise!(y, noiseDist)
 
@@ -328,6 +318,75 @@ function generatenoisydata(
 
     # Return magnitude data and random latent and known parameters
     return (abs.(y), x, ν)
+
+end
+
+function _evaluate_signalModels(
+    x,
+    signalModels::Union{<:Function,<:AbstractVector{<:Function}}
+)
+
+    if signalModels isa AbstractVector
+        if x isa AbstractVector{<:AbstractVector}
+            y = reduce(vcat, (reduce(hcat, signalModels[i].(x...))
+                for i = 1:length(signalModels)))
+        else
+            y = reduce(vcat, (reduce(hcat, signalModels[i].(x))
+                for i = 1:length(signalModels)))
+        end
+    else
+        if x isa AbstractVector{<:AbstractVector}
+            y = reduce(hcat, signalModels.(x...))
+        else
+            y = reduce(hcat, signalModels.(x))
+        end
+    end
+
+    return y
+
+end
+
+function _evaluate_signalModels(
+    x,
+    ν,
+    signalModels::Union{<:Function,<:AbstractVector{<:Function}}
+)
+
+    if signalModels isa AbstractVector
+        if x isa AbstractVector{<:AbstractVector}
+            if ν isa AbstractVector{<:AbstractVector}
+                y = reduce(vcat, (reduce(hcat, signalModels[i].(x..., ν...))
+                    for i = 1:length(signalModels)))
+            else
+                y = reduce(vcat, (reduce(hcat, signalModels[i].(x..., ν))
+                    for i = 1:length(signalModels)))
+            end
+        else
+            if ν isa AbstractVector{<:AbstractVector}
+                y = reduce(vcat, (reduce(hcat, signalModels[i].(x, ν...))
+                    for i = 1:length(signalModels)))
+            else
+                y = reduce(vcat, (reduce(hcat, signalModels[i].(x, ν))
+                    for i = 1:length(signalModels)))
+            end
+        end
+    else
+        if x isa AbstractVector{<:AbstractVector}
+            if ν isa AbstractVector{<:AbstractVector}
+                y = reduce(hcat, signalModels.(x..., ν...))
+            else
+                y = reduce(hcat, signalModels.(x..., ν))
+            end
+        else
+            if ν isa AbstractVector{<:AbstractVector}
+                y = reduce(hcat, signalModels.(x, ν...))
+            else
+                y = reduce(hcat, signalModels.(x, ν))
+            end
+        end
+    end
+
+    return y
 
 end
 

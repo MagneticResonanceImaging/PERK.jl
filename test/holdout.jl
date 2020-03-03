@@ -32,15 +32,13 @@ function test_holdout_2()
     ρvals = [1, 2]
     weights = [1]
     xDistsTest = [Uniform(100, 100.000000001)]
-    νDistsTest = Vector{Vector{Int}}()
     xDistsTrain = [Uniform(10, 500)]
-    νDistsTrain = Vector{Vector{Int}}()
     noiseDist = Normal(0, 0.01)
     signalModels = [x -> exp(-30 / x)]
     kernelgenerator = Λ -> GaussianKernel(Λ)
     (λ, ρ, Ψ) = PERK.holdout(N, T, λvals, ρvals, weights, xDistsTest,
-                             νDistsTest, xDistsTrain, νDistsTrain, noiseDist,
-                             signalModels, kernelgenerator, showprogress = true)
+                             xDistsTrain, noiseDist, signalModels,
+                             kernelgenerator, showprogress = true)
     @show Ψ
     return λ == 2 && ρ == 1
 

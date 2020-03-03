@@ -140,6 +140,19 @@ function (k::GaussianKernel)(
 end
 
 function (k::GaussianKernel)(
+    p::AbstractVector{<:Real}, # [M]
+    q::AbstractMatrix{<:Real} # [Q,N]
+)
+
+    size(q, 1) == 1 ||
+        throw(DimensionMismatch("p has feature dimension equal to 1, but q " *
+                                "has a larger feature dimension"))
+
+    return k(p, vec(q))
+
+end
+
+function (k::GaussianKernel)(
     p::AbstractVector{<:Real},
     q::AbstractVector{<:Real}
 )
@@ -294,7 +307,7 @@ function (k::GaussianRFF)(
 
     # Construct the covariance matrix from which to draw the Gaussian samples
     # and take the square root
-    sqrtΣ = div0(1, 2π * k.Λ)
+    sqrtΣ = div0(1, 2π * k.Λ[])
 
     # Scale the random frequency values
     freq = f * sqrtΣ
@@ -328,6 +341,34 @@ function rffmap(
 )
 
     return sqrt(div0(2, length(phase))) .* cos.(2π .* (freq * q .+ phase))
+
+end
+
+function rffmap(
+    q::AbstractMatrix{<:Real},
+    freq::AbstractVector{<:Real},
+    phase::AbstractVector{<:Real}
+)
+
+    size(q, 1) == 1 ||
+        throw(DimensionMismatch("freq has feature dimension equal to 1, but " *
+                                "q has a larger feature dimension"))
+
+    return rffmap(vec(q), freq, phase)
+
+end
+
+function rffmap(
+    q::Union{<:Real,<:AbstractVector{<:Real}},
+    freq::AbstractMatrix{<:Real},
+    phase::AbstractVector{<:Real}
+)
+
+    size(freq, 2) == 1 ||
+        throw(DimensionMismatch("q has feature dimension equal to 1, but " *
+                                "freq has a larger feature dimension"))
+
+    return rffmap(q, vec(freq), phase)
 
 end
 

@@ -4,8 +4,8 @@ using LinearAlgebra, Statistics, Random
 
 include("utils.jl")
 include("kernels.jl")
-include("krr.jl")
 include("training.jl")
+include("krr.jl")
 include("estimation.jl")
 include("holdout.jl")
 

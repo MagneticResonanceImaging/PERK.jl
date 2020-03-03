@@ -44,7 +44,7 @@ function perk(
 
     trainData = train(T, xDists, noiseDist, signalModels, kernel)
 
-    return perk(y, ν, trainData, kernel, ρ)
+    return perk(y, trainData, kernel, ρ)
 
 end
 
