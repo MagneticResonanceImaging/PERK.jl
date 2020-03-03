@@ -105,21 +105,26 @@ Base.getproperty(data::RFFTrainingData, s::Symbol) = begin
 end
 
 """
-    train(T, xDists, νDists, noiseDist, signalModels, kernel)
+    train(T, xDists, [νDists,] noiseDist, signalModels, kernel)
 
 Train PERK using simulated training data.
 
 # Arguments
 - `T::Integer`: Number of training points
-- `xDists::AbstractArray{<:Any,1}`: Distributions of latent parameters [L]
-- `νDists::AbstractArray{<:Any,1}`: Distributions of known parameters [K]
+- `xDists`: Distributions of latent parameters [L] or scalar (if L = 1);
+  `xDists` can be any object such that `rand(xDists, ::Integer)` is defined (or
+  a collection of such objects)
+- `νDists`: Distributions of known parameters [K] or scalar (if K = 1);
+  `νDists` can be any object such that `rand(νDists, ::Integer)` is defined (or
+  a collection of such objects); omit this parameter if K = 0
 - `noiseDist`: Distribution of noise (assumes same noise distribution for both
-  real and imaginary channels in complex case)
-- `signalModels::AbstractArray{<:Function,1}`: Signal models used to generate
-  noiseless data [numSignalModels]; each signal model accepts as inputs L
-  latent parameters (scalars) first, then K known parameters (scalars);
-  user-defined parameters (e.g., scan parameters in MRI) should be built into
-  the signal model
+  real and imaginary channels in complex case); `noiseDist` can be any object
+  such that `rand(noiseDist, ::Integer)` is defined
+- `signalModels::Union{<:Function,<:AbstractVector{<:Function}}`: Signal models
+  used to generate noiseless data [numSignalModels]; each signal model accepts
+  as inputs L latent parameters (scalars) first, then K known parameters
+  (scalars); user-defined parameters (e.g., scan parameters in MRI) should be
+  built into the signal model
 - `kernel::Kernel`: Kernel to use
 
 # Return
@@ -127,163 +132,172 @@ Train PERK using simulated training data.
 """
 function train(
     T::Integer,
-    xDists::AbstractArray{<:Any,1},
-    νDists::AbstractArray{<:Any,1},
+    xDists,
     noiseDist,
-    signalModels::AbstractArray{<:Function,1},
+    signalModels::Union{<:Function,<:AbstractVector{<:Function}},
+    kernel::Kernel
+)
+
+    (y, x) = generatenoisydata(T, xDists, noiseDist, signalModels)
+
+    return krr_train(y, x, kernel)
+
+end
+
+function train(
+    T::Integer,
+    xDists,
+    νDists,
+    noiseDist,
+    signalModels::Union{<:Function,<:AbstractArray{<:Function,1}},
     kernel::Kernel
 )
 
     (y, x, ν) = generatenoisydata(T, xDists, νDists, noiseDist, signalModels)
 
-    return train(y, x, ν, kernel)
+    q = combine(y, ν) # [D+K,T]
 
-end
-
-function train(
-    y::AbstractArray{<:Real,2},
-    x::AbstractArray{<:AbstractArray{<:Number,1},1},
-    ν::AbstractArray{<:AbstractArray{<:Number,1},1},
-    kernel::Kernel,
-    f::Union{Array{<:Real,2},Nothing} = nothing,
-    phase::Union{Array{<:Real,1},Nothing} = nothing
-)
-
-    # Combine the training data with the known parameters
-    if isempty(ν)
-        q = y # [D+K,T], K = 0
-    else
-        q = [y; transpose(hcat(ν...))] # [D+K,T]
-    end
-
-    # Reshape x
-    x = transpose(hcat(x...)) # [L,T]
-
-    # Train
-    if isnothing(f) || isnothing(phase)
-        return train(x, q, kernel)
-    else
-        return train(x, q, kernel, f, phase)
-    end
+    return krr_train(q, x, kernel)
 
 end
 
 """
-    train(x, q, kernel, [f, phase])
+    combine(y, ν)
 
-Train PERK.
-
-# Arguments
-- `x::AbstractArray{<:Any,2}`: Latent parameters [L,T]
-- `q::AbstractArray{<:Any,2}`: Training data concatenated with known
-  parameters [D+K,T]
-- `kernel::Kernel`: Kernel to use
-- `f::Array{<:Real,2} = randn(kernel.H, Q)`: Unscaled random frequency values
-  [H,Q] (used when `kernel isa RFFKernel`)
-- `phase::Array{<:Real,1} = rand(kernel.H)`: Random phase values [H] (used when
-  `kernel isa RFFKernel`)
-
-# Return
-- `trainData::TrainingData`: TrainingData object to be passed to `perk`
+Combine the output of the signal models with the known parameters.
 """
-function train(
-    x::AbstractArray{<:Any,2},
-    q::AbstractArray{<:Any,2},
-    kernel::ExactKernel
+function combine(
+    y::AbstractVector{<:Real}, # [T]
+    ν::AbstractVector{<:Real} # [T]
 )
 
-    # Do the kernel calculation
-    K = kernel(q, q) # [T,T]
-
-    # Calculate sample mean and de-mean the latent parameters
-    xm = dropdims(mean(x, dims = 2), dims = 2) # [L]
-    x = x .- xm # [L,T]
-
-    # De-mean the rows and columns of the kernel output
-    Km = dropdims(mean(K, dims = 2), dims = 2) # [T]
-    K = K .- Km # [T,T]
-    K = K .- mean(K, dims = 1) # [T,T]
-
-    return ExactTrainingData(q, x, xm, K, Km)
+    return transpose([y ν])
 
 end
 
-function train(
-    x::AbstractArray{<:Any,2},
-    q::AbstractArray{<:Any,2},
-    kernel::RFFKernel,
-    f::Union{Array{<:Real,2},Nothing} = nothing,
-    phase::Union{Array{<:Real,1},Nothing} = nothing
+function combine(
+    y::AbstractMatrix{<:Real}, # [D,T]
+    ν::AbstractVector{<:Real} # [T]
 )
 
-    # Use random Fourier features to approximate the kernel
-    if isnothing(f) || isnothing(phase)
-        (z, freq, phase) = kernel(q)
-    else
-        (z, freq, phase) = kernel(q, f, phase)
-    end
-
-    return train(x, z, freq, phase)
+    return [y; transpose(ν)]
 
 end
 
-function train(x, z, freq, phase)
+function combine(
+    y::AbstractVector{<:Real}, # [T]
+    ν::AbstractMatrix{<:Real} # [K,T]
+)
 
-    # Grab the number of training points
-    T = size(z, 2)
+    return [transpose(y); ν]
 
-    # Calculate sample means
-    zm = dropdims(mean(z, dims = 2), dims = 2) # [H]
-    xm = dropdims(mean(x, dims = 2), dims = 2) # [L]
+end
 
-    # Calculate sample covariances
-    x = x .- xm # [L,T]
-    z = z .- zm # [H,T]
-    Czz = div0.(z * z', T) # [H,H]
-    Cxz = div0.(x * z', T) # [L,H]
+function combine(
+    y::AbstractMatrix{<:Real}, # [D,T]
+    ν::AbstractMatrix{<:Real} # [K,T]
+)
 
-    return RFFTrainingData(freq, phase, zm, xm, Czz, Cxz)
+    return [y; ν]
 
 end
 
 """
-    generatenoisydata(N, xDists, νDists, noiseDist, signalModels)
+    generatenoisydata(N, xDists, [νDists,] noiseDist, signalModels)
 
-Generate noisy data from unknown and known parameter distributions.
+Generate noisy data from unknown (and possibly known) parameter distributions.
 
 # Arguments
 - `N::Integer`: Number of data points
-- `xDists::AbstractArray{<:Any,1}`: Distributions of latent parameters [L]
-- `νDists::AbstractArray{<:Any,1}`: Distributions of known parameters [K]
+- `xDists`: Distributions of latent parameters [L] or scalar (if L = 1);
+  `xDists` can be any object such that `rand(xDists, ::Integer)` is defined (or
+  a collection of such objects)
+- `νDists`: Distributions of known parameters [K] or scalar (if K = 1);
+  `νDists` can be any object such that `rand(νDists, ::Integer)` is defined (or
+  a collection of such objects); omit this parameter if K = 0
 - `noiseDist`: Distribution of noise (assumes same noise distribution for both
-  real and imaginary channels in complex case)
-- `signalModels::AbstractArray{<:Function,1}`: Signal models used to generate
-  noiseless data [numSignalModels]; each signal model accepts as inputs L
-  latent parameters (scalars) first, then K known parameters (scalars);
-  user-defined parameters (e.g., scan parameters in MRI) should be built into
-  the signal model
+  real and imaginary channels in complex case); `noiseDist` can be any object
+  such that `rand(noiseDist, ::Integer)` is defined
+- `signalModels::Union{<:Function,<:AbstractVector{<:Function}}`: Signal models
+  used to generate noiseless data [numSignalModels]; each signal model accepts
+  as inputs L latent parameters (scalars) first, then K known parameters
+  (scalars); user-defined parameters (e.g., scan parameters in MRI) should be
+  built into the signal model
 
 # Return
-- `y::Real`: Output magnitude data of all the (simulated) signals [D,N]
-- `x::Number`: Randomly generated latent parameters [L][N]
-- `ν::Number`: Randomly generated known parameters [K][N]
+- `y::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Output
+  magnitude data of all the (simulated) signals [D,N] or [N] (if D = 1)
+- `x::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Randomly
+  generated latent parameters [L,N] or [N] (if L = 1)
+- `ν::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Randomly
+  generated known parameters [K,N] or [N] (if K = 1); not returned if `νDists`
+  is omitted
 """
 function generatenoisydata(
     N::Integer,
-    xDists::AbstractArray{<:Any,1},
-    νDists::AbstractArray{<:Any,1},
+    xDists,
     noiseDist,
-    signalModels::AbstractArray{<:Function,1}
+    signalModels::Union{<:Function,<:AbstractVector{<:Function}}
+)
+
+    # Sample the distributions of latent parameters
+    if xDists isa AbstractVector
+        x = rand.(xDists, N) # [L][N]
+    else
+        x = rand(xDists, N) # [N]
+    end
+
+    # Generate the data
+    if signalModels isa AbstractVector
+        y = reduce(vcat, (reduce(hcat, signalModels[i].(x...))
+            for i = 1:length(signalModels))) # [D,N]
+    else
+        y = reduce(hcat, signalModels.(x...)) # [D,N]
+    end
+    size(y, 1) == 1 && (y = vec(y)) # [N] (if D = 1)
+    addnoise!(y, noiseDist)
+
+    # Reshape x
+    xDists isa AbstractVector && (x = transpose(hcat(x...))) # [L,N]
+
+    # Return magnitude data and random latent parameters
+    return (abs.(y), x)
+
+end
+
+function generatenoisydata(
+    N::Integer,
+    xDists,
+    νDists,
+    noiseDist,
+    signalModels::Union{<:Function,<:AbstractVector{<:Function}}
 )
 
     # Sample the distributions of latent and known parameters
-    x = rand.(xDists, N) # [L][N]
-    ν = rand.(νDists, N) # [K][N]
+    if xDists isa AbstractVector
+        x = rand.(xDists, N) # [L][N]
+    else
+        x = rand(xDists, N) # [N]
+    end
+    if νDists isa AbstractVector
+        ν = rand.(νDists, N) # [K][N]
+    else
+        ν = rand(νDists, N) # [N]
+    end
 
     # Generate the data
-    y = reduce(vcat, (reduce(hcat, signalModels[i].(x..., ν...))
-        for i = 1:length(signalModels))) # [D,N]
+    if signalModels isa AbstractVector
+        y = reduce(vcat, (reduce(hcat, signalModels[i].(x..., ν...))
+            for i = 1:length(signalModels))) # [D,N]
+    else
+        y = reduce(hcat, signalModels.(x..., ν...)) # [D,N]
+    end
+    size(y, 1) == 1 && (y = vec(y)) # [N] (if D = 1)
     addnoise!(y, noiseDist)
+
+    # Reshape x and ν
+    xDists isa AbstractVector && (x = transpose(hcat(x...))) # [L,N]
+    νDists isa AbstractVector && (ν = transpose(hcat(ν...))) # [K,N]
 
     # Return magnitude data and random latent and known parameters
     return (abs.(y), x, ν)
