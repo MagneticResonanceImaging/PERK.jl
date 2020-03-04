@@ -264,14 +264,15 @@ end
 Evaluate the approximate Gaussian kernel.
 
 # Arguments
-- `q::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Kernel input
-  [Q,N] or [N] (if Q = 1)
+- `q::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Kernel
+  input [Q,N] or [N] (if Q = 1) or scalar (if Q = N = 1)
 - `f::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}} = randn(k.H, Q)`:
   Unscaled random frequency values [H,Q] or [H] (if Q = 1)
 - `phase::AbstractVector{<:Real} = rand(k.H)`: Random phase values [H]
 
 # Return
-- `z::AbstractMatrix{<:Real}`: Higher-dimensional features [H,N]
+- `z::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`:
+  Higher-dimensional features [H,N] or [H] (if N = 1)
 - `freq::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Random
   frequency values [H,Q] or [H] (if Q = 1)
 - `phase::AbstractVector{<:Real}`: Random phase values [H]
@@ -292,7 +293,7 @@ function (k::GaussianRFF)(
 end
 
 function (k::GaussianRFF)(
-    q::AbstractVector{<:Real}
+    q::Union{<:Real,<:AbstractVector{<:Real}}
 )
 
     # Generate random phase and unscaled frequency values
@@ -323,7 +324,7 @@ function (k::GaussianRFF)(
 end
 
 function (k::GaussianRFF)(
-    p::AbstractVector{<:Real},
+    p::Union{<:Real,<:AbstractVector{<:Real}},
     f::AbstractMatrix{<:Real},
     phase::AbstractVector{<:Real}
 )
@@ -337,7 +338,7 @@ function (k::GaussianRFF)(
 end
 
 function (k::GaussianRFF)(
-    q::AbstractVector{<:Real},
+    q::Union{<:Real,<:AbstractVector{<:Real}},
     f::AbstractVector{<:Real},
     phase::AbstractVector{<:Real}
 )
@@ -392,20 +393,6 @@ function rffmap(
                                 "q has a larger feature dimension"))
 
     return rffmap(vec(q), freq, phase)
-
-end
-
-function rffmap(
-    q::Union{<:Real,<:AbstractVector{<:Real}},
-    freq::AbstractMatrix{<:Real},
-    phase::AbstractVector{<:Real}
-)
-
-    size(freq, 2) == 1 ||
-        throw(DimensionMismatch("q has feature dimension equal to 1, but " *
-                                "freq has a larger feature dimension"))
-
-    return rffmap(q, vec(freq), phase)
 
 end
 
