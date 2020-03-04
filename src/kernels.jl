@@ -323,6 +323,20 @@ function (k::GaussianRFF)(
 end
 
 function (k::GaussianRFF)(
+    p::AbstractVector{<:Real},
+    f::AbstractMatrix{<:Real},
+    phase::AbstractVector{<:Real}
+)
+
+    size(f, 2) == 1 ||
+        throw(DimensionMismatch("p has feature dimension equal to 1, but f " *
+                                "has a larger feature dimension"))
+
+    return k(p, vec(f), phase)
+
+end
+
+function (k::GaussianRFF)(
     q::AbstractVector{<:Real},
     f::AbstractVector{<:Real},
     phase::AbstractVector{<:Real}

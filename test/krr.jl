@@ -119,6 +119,29 @@ function test_krr_5()
 
 end
 
+function test_krr_6()
+
+    Random.seed!(0)
+    f = x -> exp(-30 / x)
+    xtrue = 100
+    y = f(xtrue)
+    T = 200
+    xDists = Uniform(10, 500)
+    noiseDist = Normal(0, 0.01)
+    signalModels = f
+    λ = 2.0^-1.5
+    H = 100
+    kernel = GaussianRFF(H, λ * mean(y))
+    ρ = 2.0^-20
+    (ytrain, xtrain) = generatenoisydata(T, xDists, noiseDist, signalModels)
+    trainData = PERK.krr_train(xtrain, ytrain, kernel, randn(H,1), rand(H))
+    xhat = PERK.krr(y, trainData, kernel, ρ)
+
+    error_rel = abs(xhat - xtrue) / xtrue
+    return isapprox(error_rel, 0.05798742886313903, atol = 1e-6)
+
+end
+
 @testset "Kernel Ridge Regression" begin
 
     @test test_krr_1()
@@ -126,5 +149,6 @@ end
     @test test_krr_3()
     @test test_krr_4()
     @test test_krr_5()
+    @test test_krr_6()
 
 end

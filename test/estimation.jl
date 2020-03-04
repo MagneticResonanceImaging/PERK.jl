@@ -139,6 +139,133 @@ function test_perk_6()
 
 end
 
+function test_perk_7()
+
+    Random.seed!(0)
+    f = (x, ν) -> ν * log(x)
+    xtrue = 10
+    ν = ones(1, 1)
+    y = f(xtrue, ν[])
+    T = 200
+    kernel = GaussianKernel([1, 1])
+    xDists = Uniform(0, 20)
+    νDists = [Uniform(0, 2)]
+    noiseDist = Normal(0, 0.01)
+    signalModels = [f]
+    ρ = 0.0001
+    xhat = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
+
+    error_rel = abs(xhat[] - xtrue) / xtrue
+    return isapprox(error_rel, 0.13913880330253575, atol = 1e-6)
+
+end
+
+function test_perk_8()
+
+    Random.seed!(0)
+    f = (x, ν) -> ν * log(x)
+    xtrue = 10
+    ν = 1
+    y = f(xtrue, ν)
+    T = 200
+    kernel = GaussianKernel([1, 1])
+    xDists = Uniform(0, 20)
+    νDists = Uniform(0, 2)
+    noiseDist = Normal(0, 0.01)
+    signalModels = [f]
+    ρ = 0.0001
+    xhat = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
+
+    error_rel = abs(xhat[] - xtrue) / xtrue
+    return isapprox(error_rel, 0.13913880330253575, atol = 1e-6)
+
+end
+
+function test_perk_9()
+
+    Random.seed!(0)
+    f = x -> x^2
+    xtrue = 4
+    y = fill(f(xtrue), 1, 1)
+    T = 200
+    kernel = EuclideanKernel()
+    xDists = Uniform(1, 10)
+    noiseDist = Normal(0, 0.01)
+    signalModels = [f]
+    ρ = 0.001
+    xhat = perk(y, T, xDists, noiseDist, signalModels, kernel, ρ)
+
+    error_rel = abs(xhat[] - xtrue) / xtrue
+    return isapprox(error_rel, 0.0904567549522286, atol = 1e-6)
+
+end
+
+function test_perk_10()
+
+    Random.seed!(0)
+    f = (x, ν) -> x * ν
+    xtrue = 5.5
+    N = 100
+    ν = fill(2, N)
+    y = f.(xtrue, ν) .+ 0.01 .* randn(N)
+    T = 200
+    kernel = GaussianKernel([mean(y), mean(ν)])
+    xDists = [Uniform(1, 10)]
+    νDists = [Uniform(0, 3)]
+    noiseDist = Normal(0, 0.01)
+    signalModels = f
+    ρ = 0.01
+    xhat = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
+
+    error_rel = norm(xhat .- xtrue) / (sqrt(N) * xtrue)
+    return isapprox(error_rel, 0.046618820799925, atol = 1e-6)
+
+end
+
+function test_perk_11()
+
+    Random.seed!(0)
+    f = (x, ν) -> x * ν
+    xtrue = 5.5
+    N = 100
+    ν = fill(2, N)
+    y = f.(xtrue, ν) .+ 0.01 .* randn(N)
+    T = 200
+    kernel = GaussianKernel([mean(y), mean(ν)])
+    xDists = [Uniform(1, 10)]
+    νDists = Uniform(0, 3)
+    noiseDist = Normal(0, 0.01)
+    signalModels = f
+    ρ = 0.01
+    xhat = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
+
+    error_rel = norm(xhat .- xtrue) / (sqrt(N) * xtrue)
+    return isapprox(error_rel, 0.046618820799925, atol = 1e-6)
+
+end
+
+function test_perk_12()
+
+    Random.seed!(0)
+    f = (x, ν) -> x * ν
+    xtrue = 5.5
+    N = 100
+    ν = fill(2, N)
+    y = f.(xtrue, ν) .+ 0.01 .* randn(N)
+    T = 200
+    kernel = GaussianKernel([mean(y), mean(ν)])
+    xDists = Uniform(1, 10)
+    νDists = [Uniform(0, 3)]
+    noiseDist = Normal(0, 0.01)
+    signalModels = f
+    ρ = 0.01
+    xhat = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
+
+    error_rel = norm(xhat .- xtrue) / (sqrt(N) * xtrue)
+    return isapprox(error_rel, 0.046618820799925, atol = 1e-6)
+
+end
+
 @testset "PERK" begin
 
     @test test_perk_1()
@@ -147,5 +274,11 @@ end
     @test test_perk_4()
     @test test_perk_5()
     @test test_perk_6()
+    @test test_perk_7()
+    @test test_perk_8()
+    @test test_perk_9()
+    @test test_perk_10()
+    @test test_perk_11()
+    @test test_perk_12()
 
 end

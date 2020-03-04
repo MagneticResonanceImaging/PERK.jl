@@ -17,8 +17,8 @@ function test_holdout_1()
     kernelgenerator = Λ -> GaussianKernel(Λ)
     (λ, ρ, Ψ) = PERK.holdout(N, T, λvals, ρvals, weights, xDistsTest,
                              νDistsTest, xDistsTrain, νDistsTrain, noiseDist,
-                             signalModels, kernelgenerator, showprogress = true)
-    @show Ψ
+                             signalModels, kernelgenerator, showprogress = false)
+
     return λ == 2 && ρ == 1
 
 end
@@ -38,8 +38,8 @@ function test_holdout_2()
     kernelgenerator = Λ -> GaussianKernel(Λ)
     (λ, ρ, Ψ) = PERK.holdout(N, T, λvals, ρvals, weights, xDistsTest,
                              xDistsTrain, noiseDist, signalModels,
-                             kernelgenerator, showprogress = true)
-    @show Ψ
+                             kernelgenerator, showprogress = false)
+
     return λ == 2 && ρ == 1
 
 end
