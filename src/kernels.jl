@@ -59,6 +59,19 @@ function (k::EuclideanKernel)(
 end
 
 function (k::EuclideanKernel)(
+    p::AbstractVector{<:Real}, # [M]
+    q::AbstractMatrix{<:Real} # [Q,N]
+)
+
+    size(q, 1) == 1 ||
+        throw(DimensionMismatch("p has feature dimension equal to 1, but q " *
+                                "has a larger feature dimension"))
+
+    return k(p, vec(q))
+
+end
+
+function (k::EuclideanKernel)(
     p::AbstractVector{<:Real},
     q::AbstractVector{<:Real}
 )
@@ -139,7 +152,7 @@ function (k::GaussianKernel)(
 
 end
 
-function (k::ExactKernel)(
+function (k::GaussianKernel)(
     p::AbstractVector{<:Real}, # [M]
     q::AbstractMatrix{<:Real} # [Q,N]
 )
