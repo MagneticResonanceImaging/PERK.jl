@@ -139,7 +139,7 @@ function (k::GaussianKernel)(
 
 end
 
-function (k::GaussianKernel)(
+function (k::ExactKernel)(
     p::AbstractVector{<:Real}, # [M]
     q::AbstractMatrix{<:Real} # [Q,N]
 )

@@ -1,4 +1,5 @@
 tests = [
+    "krr",
     "estimation",
     "holdout"
 ]
