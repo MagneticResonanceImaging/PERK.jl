@@ -118,6 +118,11 @@ Create a Gaussian kernel function.
 """
 struct GaussianKernel{T<:Union{<:Real,<:AbstractVector{<:Real}}} <: ExactKernel
     Λ::T
+
+    GaussianKernel(Λ::Union{<:Real,<:AbstractVector{<:Real}}) = begin
+        length(Λ) == 1 && (Λ = Λ[])
+        new{typeof(Λ)}(Λ)
+    end
 end
 
 """
@@ -246,6 +251,11 @@ Create an approximate (via random Fourier features) Gaussian kernel function.
 struct GaussianRFF{T1<:Integer,T2<:Union{<:Real,<:AbstractVector{<:Real}}} <: RFFKernel
     H::T1
     Λ::T2
+
+    GaussianRFF(H::Integer, Λ::Union{<:Real,<:AbstractVector{<:Real}}) = begin
+        length(Λ) == 1 && (Λ = Λ[])
+        new{typeof(H),typeof(Λ)}(H, Λ)
+    end
 end
 
 """
@@ -320,7 +330,7 @@ function (k::GaussianRFF)(
 
     # Construct the covariance matrix from which to draw the Gaussian samples
     # and take the square root
-    sqrtΣ = div0(1, 2π * k.Λ[])
+    sqrtΣ = div0(1, 2π * k.Λ)
 
     # Scale the random frequency values
     freq = f * sqrtΣ
