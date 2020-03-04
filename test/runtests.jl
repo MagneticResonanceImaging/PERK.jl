@@ -1,4 +1,5 @@
 tests = [
+    "kernels",
     "krr",
     "estimation",
     "holdout"

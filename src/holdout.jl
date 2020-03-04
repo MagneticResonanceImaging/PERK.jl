@@ -77,7 +77,7 @@ function holdout(
         if ndims(y) == 1 || size(y, 1) == 1
             Λ = λ * max(mean(abs.(y)), eps()) # scalar (D = 1)
         else
-            Λ = λ * max.(dropdims(mean(abs.(q), dims = 2), dims = 2), eps()) # [D]
+            Λ = λ * max.(dropdims(mean(abs.(y), dims = 2), dims = 2), eps()) # [D]
         end
 
         # Create the kernel
