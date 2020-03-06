@@ -10,9 +10,9 @@ which can be found [here](https://github.com/gopal-nataraj/perk).
 
 ## Getting Started
 At the Julia REPL, type `]` to enter the package prompt.
-Then type `add https://github.com/StevenWhitaker/PERK.jl#v0.1.0`
-to add PERK v0.1.0
-(note that `v0.1.0` can be replaced with whatever version is needed).
+Then type `add https://github.com/StevenWhitaker/PERK.jl#v0.2.0`
+to add PERK v0.2.0
+(note that `v0.2.0` can be replaced with whatever version is needed).
 Hit backspace to return to the normal Julia prompt,
 and then type `using PERK` to load the package.
 
