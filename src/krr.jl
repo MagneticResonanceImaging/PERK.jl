@@ -1,5 +1,5 @@
 """
-    krr_train(xtrain, ytrain, kernel, [f, phase])
+    krr_train(xtrain, ytrain, kernel, ρ, [f, phase])
 
 Train kernel ridge regression.
 
@@ -9,6 +9,7 @@ Train kernel ridge regression.
 - `ytrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Features
   for training data [Q,T] or [T] (if Q = 1)
 - `kernel::Kernel`: Kernel to use
+- `ρ::Real`: Tikhonov regularization parameter
 - `f::Union{<:AbstractVector{<:Real},AbstractMatrix{<:Real}} = randn(kernel.H, Q)`:
   Unscaled random frequency values [H,Q] or [H] (if Q = 1) (used when
   `kernel isa RFFKernel`)
@@ -27,8 +28,12 @@ Train kernel ridge regression.
 function krr_train(
     xtrain::AbstractVector{<:Real},
     ytrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
-    kernel::ExactKernel
+    kernel::ExactKernel,
+    ρ::Real
 )
+
+    # Grab the number of training points
+    T = length(xtrain)
 
     # Evaluate the kernel on the training features
     K = kernel(ytrain, ytrain) # [T,T]
@@ -42,15 +47,25 @@ function krr_train(
     K = K .- Km # [T,T]
     K = K .- mean(K, dims = 1) # [T,T]
 
-    return ExactTrainingData(ytrain, xtrain, xm, K, Km)
+    # Compute the (regularized) inverse of K
+    Kinv = inv(K + T * ρ * I) # [T,T]
+
+    # Multiply by xtrain
+    xKinv = transpose(Kinv) * xtrain # [T]
+
+    return ExactTrainingData(ytrain, xtrain, xm, K, Km, xKinv)
 
 end
 
 function krr_train(
     xtrain::AbstractMatrix{<:Real},
     ytrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
-    kernel::ExactKernel
+    kernel::ExactKernel,
+    ρ::Real
 )
+
+    # Grab the number of training points
+    T = size(xtrain, 2)
 
     # Evaluate the kernel on the training features
     K = kernel(ytrain, ytrain) # [T,T]
@@ -64,20 +79,13 @@ function krr_train(
     K = K .- Km # [T,T]
     K = K .- mean(K, dims = 1) # [T,T]
 
-    return ExactTrainingData(ytrain, xtrain, xm, K, Km)
+    # Compute the (regularized) inverse of K
+    Kinv = inv(K + T * ρ * I) # [T,T]
 
-end
+    # Multiply by xtrain
+    xKinv = xtrain * Kinv # [L,T]
 
-function krr_train(
-    xtrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
-    ytrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
-    kernel::RFFKernel
-)
-
-    # Use random Fourier features to approximate the kernel
-    (z, freq, phase) = kernel(ytrain)
-
-    return _krr_train(xtrain, z, freq, phase)
+    return ExactTrainingData(ytrain, xtrain, xm, K, Km, xKinv)
 
 end
 
@@ -85,6 +93,21 @@ function krr_train(
     xtrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     ytrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     kernel::RFFKernel,
+    ρ::Real
+)
+
+    # Use random Fourier features to approximate the kernel
+    (z, freq, phase) = kernel(ytrain)
+
+    return _krr_train(xtrain, z, ρ, freq, phase)
+
+end
+
+function krr_train(
+    xtrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    ytrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    kernel::RFFKernel,
+    ρ::Real,
     f::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     phase::AbstractVector{<:Real}
 )
@@ -92,13 +115,14 @@ function krr_train(
     # Use random Fourier features to approximate the kernel
     (z, freq, phase) = kernel(ytrain, f, phase)
 
-    return _krr_train(xtrain, z, freq, phase)
+    return _krr_train(xtrain, z, ρ, freq, phase)
 
 end
 
 function _krr_train(
     xtrain::AbstractVector{<:Real}, # [T]
     z::AbstractMatrix{<:Real}, # [H,T]
+    ρ::Real,
     freq::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}, # [H,Q] or [H]
     phase::AbstractVector{<:Real} # [H]
 )
@@ -116,13 +140,20 @@ function _krr_train(
     Czz = div0.(z * z', T) # [H,H]
     Cxz = div0.(z * xtrain, T) # [H]
 
-    return RFFTrainingData(freq, phase, zm, xm, Czz, Cxz)
+    # Calculate the (regularized) inverse of Czz
+    Czzinv = inv(Czz + ρ * I) # [H,H]
+
+    # Multiply by Cxz
+    CxzCzzinv = transpose(Czzinv) * Cxz # [H]
+
+    return RFFTrainingData(freq, phase, zm, xm, Czz, Cxz, CxzCzzinv)
 
 end
 
 function _krr_train(
     xtrain::AbstractMatrix{<:Real}, # [L,T]
     z::AbstractMatrix{<:Real}, # [H,T]
+    ρ::Real,
     freq::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}, # [H,Q] or [H]
     phase::AbstractVector{<:Real} # [H]
 )
@@ -140,12 +171,18 @@ function _krr_train(
     Czz = div0.(z * z', T) # [H,H]
     Cxz = div0.(xtrain * z', T) # [L,H]
 
-    return RFFTrainingData(freq, phase, zm, xm, Czz, Cxz)
+    # Calculate the (regularized) inverse of Czz
+    Czzinv = inv(Czz + ρ * I) # [H,H]
+
+    # Multiply by Cxz
+    CxzCzzinv = Cxz * Czzinv # [L,H]
+
+    return RFFTrainingData(freq, phase, zm, xm, Czz, Cxz, CxzCzzinv)
 
 end
 
 """
-    krr(ytest, trainData, kernel, ρ)
+    krr(ytest, trainData, kernel)
 
 Predict latent parameters that generated `ytest` using kernel ridge regression.
 
@@ -154,7 +191,6 @@ Predict latent parameters that generated `ytest` using kernel ridge regression.
   Observed test data [Q,N] or [N] (if Q = 1) or scalar (if Q = N = 1)
 - `trainData::TrainingData`: Training data
 - `kernel::Kernel`: Kernel to use
-- `ρ::Real`: Tikhonov regularization parameter
 
 ## Notes
 - Q is the number of observed features per test sample
@@ -168,19 +204,17 @@ Predict latent parameters that generated `ytest` using kernel ridge regression.
 function krr(
     ytest::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     trainData::ExactTrainingData,
-    kernel::ExactKernel,
-    ρ::Real
+    kernel::ExactKernel
 )
 
     k = kernel(trainData.y, ytest) # [T,N] or [T]
     k = k .- trainData.Km # [T,N] or [T]
-    tmp = (trainData.K + trainData.T * ρ * I) \ k # [T,N] or [T]
 
     # Check if L = 1
-    if trainData isa ExactTrainingData{<:Any,<:AbstractVector,<:Any,<:Any,<:Any}
-        xhat = trainData.xm .+ transpose(tmp) * trainData.x # [N] or scalar
+    if trainData isa ExactTrainingData{<:Any,<:AbstractVector,<:Any,<:Any,<:Any,<:Any}
+        xhat = trainData.xm .+ transpose(k) * trainData.xKinv # [N] or scalar
     else
-        xhat = trainData.xm .+ trainData.x * tmp # [L,N] or [L]
+        xhat = trainData.xm .+ trainData.xKinv * k # [L,N] or [L]
     end
 
     return xhat
@@ -190,19 +224,17 @@ end
 function krr(
     ytest::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     trainData::RFFTrainingData,
-    ::RFFKernel,
-    ρ::Real
+    ::RFFKernel
 )
 
     z = rffmap(ytest, trainData.freq, trainData.phase) # [H,N] or [H]
     z = z .- trainData.zm # [H,N] or [H]
-    tmp = (trainData.Czz + ρ * I) \ z # [H,N] or [H]
 
     # Check if L = 1
-    if trainData isa RFFTrainingData{<:Any,<:Any,<:Any,<:Any,<:Any,<:AbstractVector}
-        xhat = trainData.xm .+ transpose(tmp) * trainData.Cxz # [N] or scalar
+    if trainData isa RFFTrainingData{<:Any,<:Any,<:Any,<:Any,<:Any,<:AbstractVector,<:Any}
+        xhat = trainData.xm .+ transpose(z) * trainData.CxzCzzinv # [N] or scalar
     else
-        xhat = trainData.xm .+ trainData.Cxz * tmp # [L,N] or [L]
+        xhat = trainData.xm .+ trainData.CxzCzzinv * z # [L,N] or [L]
     end
 
     return xhat

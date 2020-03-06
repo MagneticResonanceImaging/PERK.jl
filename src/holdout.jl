@@ -62,6 +62,8 @@ function holdout(
 
     # Generate synthetic test data
     (y, x) = generatenoisydata(N, xDistsTest, noiseDist, signalModels)
+    (ytrain, xtrain) = generatenoisydata(T, xDistsTrain, noiseDist,
+                                         signalModels)
 
     # Loop through each value of λ and ρ
     nλ = length(λvals)
@@ -83,17 +85,17 @@ function holdout(
         # Create the kernel
         kernel = kernelgenerator(Λ)
 
-        # Train PERK
-        trainData = train(T, xDistsTrain, noiseDist, signalModels, kernel)
-
         for idxρ = 1:nρ
 
             showprogress && println("    idxρ = $idxρ/$nρ")
 
             ρ = ρvals[idxρ]
 
+            # Train PERK
+            trainData = PERK.krr_train(xtrain, ytrain, kernel, ρ)
+
             # Run PERK
-            xhat = perk(y, trainData, kernel, ρ) # [L,N]
+            xhat = perk(y, trainData, kernel) # [L,N]
 
             # Calculate Ψ(λ,ρ), the holdout cost
             werr = ((xhat - x) ./ x) .* sqrt.(weights) # [L,N]
@@ -138,9 +140,15 @@ function holdout(
         throw(DimensionMismatch("lengths of νDistsTest and νDistsTrain " *
                                 "should be the same"))
 
-    # Generate synthetic test data
+    # Generate synthetic test data and training data
     (y, x, ν) = generatenoisydata(N, xDistsTest, νDistsTest, noiseDist,
                                   signalModels)
+    (ytrain, xtrain, νtrain) = generatenoisydata(T, xDistsTrain, νDistsTrain,
+                                                 noiseDist, signalModels)
+
+    # Combine y and ν
+    q = combine(y, ν) # [D+K,N]
+    qtrain = combine(ytrain, νtrain) # [D+K,T]
 
     # Loop through each value of λ and ρ
     nλ = length(λvals)
@@ -153,15 +161,10 @@ function holdout(
         λ = λvals[idxλ]
 
         # Generate length scales
-        q = combine(y, ν) # [D+K,N]
         Λ = λ * max.(dropdims(mean(abs.(q), dims = 2), dims = 2), eps()) # [D+K]
 
         # Create the kernel
         kernel = kernelgenerator(Λ)
-
-        # Train PERK
-        trainData = train(T, xDistsTrain, νDistsTrain, noiseDist,
-                          signalModels, kernel)
 
         for idxρ = 1:nρ
 
@@ -169,8 +172,11 @@ function holdout(
 
             ρ = ρvals[idxρ]
 
+            # Train PERK
+            trainData = PERK.krr_train(xtrain, qtrain, kernel, ρ)
+
             # Run PERK
-            xhat = perk(y, ν, trainData, kernel, ρ) # [L,N]
+            xhat = perk(y, ν, trainData, kernel) # [L,N]
 
             # Calculate Ψ(λ,ρ), the holdout cost
             werr = ((xhat - x) ./ x) .* sqrt.(weights) # [L,N]

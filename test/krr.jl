@@ -8,10 +8,10 @@ function test_krr_1()
     xtrain = LinRange(0, 1, T)
     ytrain = xtrain .+ 0.1 .* randn(T)
     kernel = EuclideanKernel()
-    trainData = PERK.krr_train(xtrain, ytrain, kernel)
-    ytest = 0.6
     ρ = 0.01
-    xhat = PERK.krr(ytest, trainData, kernel, ρ)
+    trainData = PERK.krr_train(xtrain, ytrain, kernel, ρ)
+    ytest = 0.6
+    xhat = PERK.krr(ytest, trainData, kernel)
 
     K = ytrain * ytrain'
     M = I - ones(T, T) / T
@@ -31,10 +31,10 @@ function test_krr_2()
     ytrain = xtrain' .+ 0.1 .* randn(D, T)
     Λ = ones(D)
     kernel = GaussianKernel(Λ)
-    trainData = PERK.krr_train(xtrain, ytrain, kernel)
-    ytest = transpose([0.6 0.57 0.67])
     ρ = 0.01
-    xhat = PERK.krr(ytest, trainData, kernel, ρ)
+    trainData = PERK.krr_train(xtrain, ytrain, kernel, ρ)
+    ytest = transpose([0.6 0.57 0.67])
+    xhat = PERK.krr(ytest, trainData, kernel)
 
     gauss = (p, q) -> exp(-0.5 * norm((1 ./ Λ) .* (p - q))^2)
     K = [gauss(ytrain[:,m], ytrain[:,n]) for m = 1:T, n = 1:T]
@@ -55,11 +55,11 @@ function test_krr_3()
     xtrain = LinRange(0, 1, T)
     ytrain = xtrain .+ 0.1 .* randn(T)
     kernel = EuclideanKernel()
-    trainData = PERK.krr_train(xtrain, ytrain, kernel)
+    ρ = 0.01
+    trainData = PERK.krr_train(xtrain, ytrain, kernel, ρ)
     N = 10
     ytest = LinRange(0.1, 0.9, N)
-    ρ = 0.01
-    xhat = PERK.krr(ytest, trainData, kernel, ρ)
+    xhat = PERK.krr(ytest, trainData, kernel)
 
     xtilde = [xtrain .- mean(xtrain); 0]
     Ytilde = [ytrain .- mean(ytrain); sqrt(T * ρ)]
@@ -79,11 +79,11 @@ function test_krr_4()
     xtrain = LinRange(0, 1, T)
     ytrain = xtrain' .+ 0.1 .* randn(D, T)
     kernel = EuclideanKernel()
-    trainData = PERK.krr_train(xtrain, ytrain, kernel)
+    ρ = 0.01
+    trainData = PERK.krr_train(xtrain, ytrain, kernel, ρ)
     N = 10
     ytest = LinRange(0.1, 0.9, N)' .+ 0.1 .* randn(D, N)
-    ρ = 0.01
-    xhat = PERK.krr(ytest, trainData, kernel, ρ)
+    xhat = PERK.krr(ytest, trainData, kernel)
 
     xtilde = [xtrain .- mean(xtrain); zeros(D)]
     Ytilde = [(ytrain .- mean(ytrain, dims = 2))'; sqrt(T * ρ) * I]
@@ -111,8 +111,8 @@ function test_krr_5()
     kernel = GaussianRFF(H, λ * mean(y))
     ρ = 2.0^-20
     (ytrain, xtrain) = generatenoisydata(T, xDists, noiseDist, signalModels)
-    trainData = PERK.krr_train(xtrain, ytrain, kernel, randn(H), rand(H))
-    xhat = PERK.krr(y, trainData, kernel, ρ)
+    trainData = PERK.krr_train(xtrain, ytrain, kernel, ρ, randn(H), rand(H))
+    xhat = PERK.krr(y, trainData, kernel)
 
     error_rel = abs(xhat - xtrue) / xtrue
     return isapprox(error_rel, 0.05798742886313903, atol = 1e-6)
@@ -134,8 +134,8 @@ function test_krr_6()
     kernel = GaussianRFF(H, λ * mean(y))
     ρ = 2.0^-20
     (ytrain, xtrain) = generatenoisydata(T, xDists, noiseDist, signalModels)
-    trainData = PERK.krr_train(xtrain, ytrain, kernel, randn(H,1), rand(H))
-    xhat = PERK.krr(y, trainData, kernel, ρ)
+    trainData = PERK.krr_train(xtrain, ytrain, kernel, ρ, randn(H,1), rand(H))
+    xhat = PERK.krr(y, trainData, kernel)
 
     error_rel = abs(xhat - xtrue) / xtrue
     return isapprox(error_rel, 0.05798742886313903, atol = 1e-6)

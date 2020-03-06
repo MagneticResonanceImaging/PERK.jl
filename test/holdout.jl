@@ -19,7 +19,7 @@ function test_holdout_1()
                              νDistsTest, xDistsTrain, νDistsTrain, noiseDist,
                              signalModels, kernelgenerator, showprogress = false)
 
-    return λ == 2 && ρ == 1
+    return λ == 1 && ρ == 1
 
 end
 
@@ -40,7 +40,7 @@ function test_holdout_2()
                              xDistsTrain, noiseDist, signalModels,
                              kernelgenerator, showprogress = false)
 
-    return λ == 2 && ρ == 1
+    return λ == 1 && ρ == 1
 
 end
 
@@ -62,7 +62,7 @@ function test_holdout_3()
                              νDistsTest, xDistsTrain, νDistsTrain, noiseDist,
                              signalModels, kernelgenerator, showprogress = false)
 
-    return λ == 2 && ρ == 1
+    return λ == 1 && ρ == 1
 
 end
 
@@ -82,7 +82,7 @@ function test_holdout_4()
                              xDistsTrain, noiseDist, signalModels,
                              kernelgenerator, showprogress = false)
 
-    return λ == 2 && ρ == 1
+    return λ == 1 && ρ == 1
 
 end
 

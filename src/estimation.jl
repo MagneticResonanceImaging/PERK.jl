@@ -42,9 +42,9 @@ function perk(
     ρ::Real
 )
 
-    trainData = train(T, xDists, noiseDist, signalModels, kernel)
+    trainData = train(T, xDists, noiseDist, signalModels, kernel, ρ)
 
-    return perk(y, trainData, kernel, ρ)
+    return perk(y, trainData, kernel)
 
 end
 
@@ -60,14 +60,14 @@ function perk(
     ρ::Real
 )
 
-    trainData = train(T, xDists, νDists, noiseDist, signalModels, kernel)
+    trainData = train(T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
 
-    return perk(y, ν, trainData, kernel, ρ)
+    return perk(y, ν, trainData, kernel)
 
 end
 
 """
-    perk(y, [ν,] trainData, kernel, ρ)
+    perk(y, [ν,] trainData, kernel)
 
 Estimate latent parameters using the provided training data.
 
@@ -79,7 +79,6 @@ Estimate latent parameters using the provided training data.
   parameter if K = 0
 - `trainData::TrainingData`: Training data
 - `kernel::Kernel`: Kernel to use
-- `ρ::Real`: Tikhonov regularization parameter
 
 # Return
 - `xhat::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`:
@@ -89,11 +88,10 @@ Estimate latent parameters using the provided training data.
 function perk(
     y::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     trainData::TrainingData,
-    kernel::Kernel,
-    ρ::Real
+    kernel::Kernel
 )
 
-    return krr(y, trainData, kernel, ρ)
+    return krr(y, trainData, kernel)
 
 end
 
@@ -101,12 +99,11 @@ function perk(
     y::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     ν::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     trainData::TrainingData,
-    kernel::Kernel,
-    ρ::Real
+    kernel::Kernel
 )
 
     q = combine(y, ν)
 
-    return krr(q, trainData, kernel, ρ)
+    return krr(q, trainData, kernel)
 
 end

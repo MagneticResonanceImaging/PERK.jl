@@ -6,7 +6,7 @@ Abstract type for representing training data.
 abstract type TrainingData end
 
 """
-    ExactTrainingData(y, x, xm, K, Km) <: TrainingData
+    ExactTrainingData(y, x, xm, K, Km, xKinv) <: TrainingData
 
 Create an object that contains the training data when using the full Gram matrix
 K.
@@ -21,6 +21,8 @@ K.
 - `K::AbstractMatrix{<:Real}`: De-meaned (both rows and columns) Gram matrix of
   the kernel evaluated on the training data features [T,T]
 - `Km::AbstractVector{<:Real}`: Row means of `K` (before de-meaning) [T]
+- `xKinv::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: `x` times
+  the regularized inverse of `K` [L,T] or [T] (if L = 1)
 - `Q::Integer`: Number of training features
 - `L::Integer`: Number of latent parameters
 - `T::Integer`: Number of training points
@@ -30,13 +32,15 @@ struct ExactTrainingData{
     T2<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     T3<:Union{<:Real,<:AbstractVector{<:Real}},
     T4<:AbstractMatrix{<:Real},
-    T5<:AbstractVector{<:Real}
+    T5<:AbstractVector{<:Real},
+    T6<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}
 } <: TrainingData
     y::T1
     x::T2
     xm::T3
     K::T4
     Km::T5
+    xKinv::T6
 end
 
 Base.getproperty(data::ExactTrainingData, s::Symbol) = begin
@@ -54,7 +58,7 @@ Base.getproperty(data::ExactTrainingData, s::Symbol) = begin
 end
 
 """
-    RFFTrainingData(freq, phase, zm, xm, Czz, Cxz) <: TrainingData
+    RFFTrainingData(freq, phase, zm, xm, Czz, Cxz, CxzCzzinv) <: TrainingData
 
 Create an object that contains the training data when using an approximation of
 the Gram matrix K using random Fourier features.
@@ -71,6 +75,8 @@ the Gram matrix K using random Fourier features.
 - `Cxz::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`:
   Cross-covariance matrix between latent parameters and feature maps [L,H] or
   [H] (if L = 1)
+- `CxzCzzinv::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: `Cxz`
+  times the regularized inverse of `Czz` [L,H] or [H] (if L = 1)
 - `Q::Integer`: Number of training features
 - `L::Integer`: Number of latent parameters
 - `H::Integer`: Kernel approximation order
@@ -81,7 +87,8 @@ struct RFFTrainingData{
     T3<:AbstractVector{<:Real},
     T4<:Union{<:Real,<:AbstractVector{<:Real}},
     T5<:AbstractMatrix{<:Real},
-    T6<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}
+    T6<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    T7<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}
 } <: TrainingData
     freq::T1
     phase::T2
@@ -89,6 +96,7 @@ struct RFFTrainingData{
     xm::T4
     Czz::T5
     Cxz::T6
+    CxzCzzinv::T7
 end
 
 Base.getproperty(data::RFFTrainingData, s::Symbol) = begin
@@ -105,7 +113,7 @@ Base.getproperty(data::RFFTrainingData, s::Symbol) = begin
 end
 
 """
-    train(T, xDists, [νDists,] noiseDist, signalModels, kernel)
+    train(T, xDists, [νDists,] noiseDist, signalModels, kernel, ρ)
 
 Train PERK using simulated training data.
 
@@ -126,6 +134,7 @@ Train PERK using simulated training data.
   (scalars); user-defined parameters (e.g., scan parameters in MRI) should be
   built into the signal model
 - `kernel::Kernel`: Kernel to use
+- `ρ::Real`: Tikhonov regularization parameter
 
 # Return
 - `trainData::TrainingData`: TrainingData object to be passed to `perk`
@@ -135,12 +144,13 @@ function train(
     xDists,
     noiseDist,
     signalModels::Union{<:Function,<:AbstractVector{<:Function}},
-    kernel::Kernel
+    kernel::Kernel,
+    ρ::Real
 )
 
     (y, x) = generatenoisydata(T, xDists, noiseDist, signalModels)
 
-    return krr_train(x, y, kernel)
+    return krr_train(x, y, kernel, ρ)
 
 end
 
@@ -150,14 +160,15 @@ function train(
     νDists,
     noiseDist,
     signalModels::Union{<:Function,<:AbstractArray{<:Function,1}},
-    kernel::Kernel
+    kernel::Kernel,
+    ρ::Real
 )
 
     (y, x, ν) = generatenoisydata(T, xDists, νDists, noiseDist, signalModels)
 
     q = combine(y, ν) # [D+K,T]
 
-    return krr_train(x, q, kernel)
+    return krr_train(x, q, kernel, ρ)
 
 end
 
