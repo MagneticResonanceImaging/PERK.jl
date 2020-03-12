@@ -291,7 +291,7 @@ function generatenoisydata(
     addnoise!(y, noiseDist)
 
     # Reshape x
-    xDists isa AbstractVector && (x = transpose(hcat(x...))) # [L,N]
+    xDists isa AbstractVector && (x = transpose(reduce(hcat, x))) # [L,N]
 
     # Return magnitude data and random latent parameters
     return (abs.(y), x)
@@ -339,17 +339,17 @@ function _evaluate_signalModels(
 
     if signalModels isa AbstractVector
         if x isa AbstractVector{<:AbstractVector}
-            y = reduce(vcat, (reduce(hcat, signalModels[i].(x...))
+            y = reduce(vcat, (_hcat(signalModels[i].(x...))
                 for i = 1:length(signalModels)))
         else
-            y = reduce(vcat, (reduce(hcat, signalModels[i].(x))
+            y = reduce(vcat, (_hcat(signalModels[i].(x))
                 for i = 1:length(signalModels)))
         end
     else
         if x isa AbstractVector{<:AbstractVector}
-            y = reduce(hcat, signalModels.(x...))
+            y = _hcat(signalModels.(x...))
         else
-            y = reduce(hcat, signalModels.(x))
+            y = _hcat(signalModels.(x))
         end
     end
 
@@ -366,33 +366,33 @@ function _evaluate_signalModels(
     if signalModels isa AbstractVector
         if x isa AbstractVector{<:AbstractVector}
             if ν isa AbstractVector{<:AbstractVector}
-                y = reduce(vcat, (reduce(hcat, signalModels[i].(x..., ν...))
+                y = reduce(vcat, (_hcat(signalModels[i].(x..., ν...))
                     for i = 1:length(signalModels)))
             else
-                y = reduce(vcat, (reduce(hcat, signalModels[i].(x..., ν))
+                y = reduce(vcat, (_hcat(signalModels[i].(x..., ν))
                     for i = 1:length(signalModels)))
             end
         else
             if ν isa AbstractVector{<:AbstractVector}
-                y = reduce(vcat, (reduce(hcat, signalModels[i].(x, ν...))
+                y = reduce(vcat, (_hcat(signalModels[i].(x, ν...))
                     for i = 1:length(signalModels)))
             else
-                y = reduce(vcat, (reduce(hcat, signalModels[i].(x, ν))
+                y = reduce(vcat, (_hcat(signalModels[i].(x, ν))
                     for i = 1:length(signalModels)))
             end
         end
     else
         if x isa AbstractVector{<:AbstractVector}
             if ν isa AbstractVector{<:AbstractVector}
-                y = reduce(hcat, signalModels.(x..., ν...))
+                y = _hcat(signalModels.(x..., ν...))
             else
-                y = reduce(hcat, signalModels.(x..., ν))
+                y = _hcat(signalModels.(x..., ν))
             end
         else
             if ν isa AbstractVector{<:AbstractVector}
-                y = reduce(hcat, signalModels.(x, ν...))
+                y = _hcat(signalModels.(x, ν...))
             else
-                y = reduce(hcat, signalModels.(x, ν))
+                y = _hcat(signalModels.(x, ν))
             end
         end
     end
@@ -400,6 +400,11 @@ function _evaluate_signalModels(
     return y
 
 end
+
+# Use _hcat to have type stability, because reduce(hcat, x) is type unstable
+# if x is a AbstractVector (returns scalar if length(x) == 1, else 2D array)
+_hcat(x::AbstractVector{<:AbstractVector}) = reduce(hcat, x)
+_hcat(x::AbstractVector) = x
 
 """
     addnoise!(y, noiseDist)
