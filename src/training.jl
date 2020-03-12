@@ -324,8 +324,8 @@ function generatenoisydata(
     addnoise!(y, noiseDist)
 
     # Reshape x and ν
-    xDists isa AbstractVector && (x = transpose(hcat(x...))) # [L,N]
-    νDists isa AbstractVector && (ν = transpose(hcat(ν...))) # [K,N]
+    xDists isa AbstractVector && (x = transpose(reduce(hcat, x))) # [L,N]
+    νDists isa AbstractVector && (ν = transpose(reduce(hcat, ν))) # [K,N]
 
     # Return magnitude data and random latent and known parameters
     return (abs.(y), x, ν)
