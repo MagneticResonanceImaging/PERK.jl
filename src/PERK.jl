@@ -1,6 +1,7 @@
 module PERK
 
-using LinearAlgebra, Statistics, Random
+using LinearAlgebra: I, Diagonal, norm
+using Statistics: mean
 
 include("utils.jl")
 include("kernels.jl")
@@ -11,7 +12,8 @@ include("holdout.jl")
 
 export perk
 export generatenoisydata
-export GaussianKernel, GaussianRFF
+export GaussianKernel
+export GaussianRFF
 export EuclideanKernel
 
 end
