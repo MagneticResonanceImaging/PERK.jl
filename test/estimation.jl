@@ -1,5 +1,3 @@
-using PERK, Test, Random, LinearAlgebra, Statistics, Distributions
-
 function test_perk_1()
 
     Random.seed!(0)

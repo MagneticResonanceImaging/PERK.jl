@@ -1,5 +1,3 @@
-using PERK, Test
-
 function test_EuclideanKernel_1()
 
     k = EuclideanKernel()

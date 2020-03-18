@@ -1,5 +1,3 @@
-using PERK, Test, Random, Distributions
-
 function test_holdout_1()
 
     Random.seed!(0)

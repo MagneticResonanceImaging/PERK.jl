@@ -1,5 +1,3 @@
-using PERK, Test, Random, LinearAlgebra, Statistics, Distributions
-
 # Make sure PERK.krr computes Eq. 11 in Nataraj et al. for exact kernels
 function test_krr_1()
 

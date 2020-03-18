@@ -1,9 +1,13 @@
-tests = [
-    "kernels",
-    "krr",
-    "estimation",
-    "holdout"
-]
-for t in tests
-    include("$(t).jl")
+using Distributions
+using LinearAlgebra
+using PERK
+using Random
+using Statistics
+using Test
+
+@testset "PERK.jl" begin
+    include("kernels.jl")
+    include("krr.jl")
+    include("estimation.jl")
+    include("holdout.jl")
 end
