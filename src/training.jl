@@ -13,16 +13,16 @@ K.
 
 # Properties
 - `y::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Features for
-  training data [Q,T] or [T] (if Q = 1)
+  training data [Q,T] or \\[T\\] (if Q = 1)
 - `x::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Latent
-  parameters for training data [L,T] or [T] (if L = 1)
-- `xm::Union{<:Real,<:AbstractVector{<:Real}}`: Mean of latent parameters [L] or
-  scalar (if L = 1)
+  parameters for training data [L,T] or \\[T\\] (if L = 1)
+- `xm::Union{<:Real,<:AbstractVector{<:Real}}`: Mean of latent parameters
+  \\[L\\] or scalar (if L = 1)
 - `K::AbstractMatrix{<:Real}`: De-meaned (both rows and columns) Gram matrix of
   the kernel evaluated on the training data features [T,T]
-- `Km::AbstractVector{<:Real}`: Row means of `K` (before de-meaning) [T]
+- `Km::AbstractVector{<:Real}`: Row means of `K` (before de-meaning) \\[T\\]
 - `xKinv::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: `x` times
-  the regularized inverse of `K` [L,T] or [T] (if L = 1)
+  the regularized inverse of `K` [L,T] or \\[T\\] (if L = 1)
 - `Q::Integer`: Number of training features
 - `L::Integer`: Number of latent parameters
 - `T::Integer`: Number of training points
@@ -65,18 +65,18 @@ the Gram matrix K using random Fourier features.
 
 # Properties
 - `freq::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Random
-  frequency values for random Fourier features [H,Q] or [H] (if Q = 1)
+  frequency values for random Fourier features [H,Q] or \\[H\\] (if Q = 1)
 - `phase::AbstractVector{<:Real}`: Random phase values for random Fourier
-  features [H]
-- `zm::AbstractVector{<:Real}`: Mean of feature maps [H]
-- `xm::Union{<:Real,<:AbstractVector{<:Real}}`: Mean of latent parameters [L]
-  or scalar (if L = 1)
+  features \\[H\\]
+- `zm::AbstractVector{<:Real}`: Mean of feature maps \\[H\\]
+- `xm::Union{<:Real,<:AbstractVector{<:Real}}`: Mean of latent parameters
+  \\[L\\] or scalar (if L = 1)
 - `Czz::AbstractMatrix{<:Real}`: Auto-covariance matrix of feature maps [H,H]
 - `Cxz::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`:
   Cross-covariance matrix between latent parameters and feature maps [L,H] or
-  [H] (if L = 1)
+  \\[H\\] (if L = 1)
 - `CxzCzzinv::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: `Cxz`
-  times the regularized inverse of `Czz` [L,H] or [H] (if L = 1)
+  times the regularized inverse of `Czz` [L,H] or \\[H\\] (if L = 1)
 - `Q::Integer`: Number of training features
 - `L::Integer`: Number of latent parameters
 - `H::Integer`: Kernel approximation order
@@ -119,18 +119,18 @@ Train PERK using simulated training data.
 
 # Arguments
 - `T::Integer`: Number of training points
-- `xDists`: Distributions of latent parameters [L] or scalar (if L = 1);
+- `xDists`: Distributions of latent parameters \\[L\\] or scalar (if L = 1);
   `xDists` can be any object such that `rand(xDists, ::Integer)` is defined (or
   a collection of such objects)
-- `νDists`: Distributions of known parameters [K] or scalar (if K = 1);
+- `νDists`: Distributions of known parameters \\[K\\] or scalar (if K = 1);
   `νDists` can be any object such that `rand(νDists, ::Integer)` is defined (or
   a collection of such objects); omit this parameter if K = 0
 - `noiseDist`: Distribution of noise (assumes same noise distribution for both
   real and imaginary channels in complex case); `noiseDist` can be any object
   such that `rand(noiseDist, ::Integer)` is defined
 - `signalModels::Union{<:Function,<:AbstractVector{<:Function}}`: Signal models
-  used to generate noiseless data [numSignalModels]; each signal model accepts
-  as inputs L latent parameters (scalars) first, then K known parameters
+  used to generate noiseless data \\[numSignalModels\\]; each signal model
+  accepts as inputs L latent parameters (scalars) first, then K known parameters
   (scalars); user-defined parameters (e.g., scan parameters in MRI) should be
   built into the signal model
 - `kernel::Kernel`: Kernel to use
@@ -247,29 +247,29 @@ Generate noisy data from unknown (and possibly known) parameter distributions.
 
 # Arguments
 - `N::Integer`: Number of data points
-- `xDists`: Distributions of latent parameters [L] or scalar (if L = 1);
+- `xDists`: Distributions of latent parameters \\[L\\] or scalar (if L = 1);
   `xDists` can be any object such that `rand(xDists, ::Integer)` is defined (or
   a collection of such objects)
-- `νDists`: Distributions of known parameters [K] or scalar (if K = 1);
+- `νDists`: Distributions of known parameters \\[K\\] or scalar (if K = 1);
   `νDists` can be any object such that `rand(νDists, ::Integer)` is defined (or
   a collection of such objects); omit this parameter if K = 0
 - `noiseDist`: Distribution of noise (assumes same noise distribution for both
   real and imaginary channels in complex case); `noiseDist` can be any object
   such that `rand(noiseDist, ::Integer)` is defined
 - `signalModels::Union{<:Function,<:AbstractVector{<:Function}}`: Signal models
-  used to generate noiseless data [numSignalModels]; each signal model accepts
-  as inputs L latent parameters (scalars) first, then K known parameters
+  used to generate noiseless data \\[numSignalModels\\]; each signal model
+  accepts as inputs L latent parameters (scalars) first, then K known parameters
   (scalars); user-defined parameters (e.g., scan parameters in MRI) should be
   built into the signal model
 
 # Return
 - `y::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Output
-  magnitude data of all the (simulated) signals [D,N] or [N] (if D = 1)
+  magnitude data of all the (simulated) signals [D,N] or \\[N\\] (if D = 1)
 - `x::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Randomly
-  generated latent parameters [L,N] or [N] (if L = 1)
+  generated latent parameters [L,N] or \\[N\\] (if L = 1)
 - `ν::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Randomly
-  generated known parameters [K,N] or [N] (if K = 1); not returned if `νDists`
-  is omitted
+  generated known parameters [K,N] or \\[N\\] (if K = 1); not returned if
+  `νDists` is omitted
 """
 function generatenoisydata(
     N::Integer,

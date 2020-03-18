@@ -1,40 +1,47 @@
 """
-    holdout(N, T, λvals, ρvals, [weights,] xDistsTest, [νDistsTest,]
-            xDistsTrain, [νDistsTrain,] noiseDist, signalModels,
-            kernelgenerator; showprogress)
+    holdout(N, T, λvals, ρvals, [weights,] xDistsTest, xDistsTrain, noiseDist,
+            signalModels, kernelgenerator; showprogress)
+    holdout(N, T, λvals, ρvals, [weights,] xDistsTest, νDistsTest, xDistsTrain,
+            νDistsTrain, noiseDist, signalModels, kernelgenerator; showprogress)
 
 Select λ and ρ via a holdout process.
 
 # Arguments
 - `N::Integer`: Number of test points
 - `T::Integer`: Number of training points
-- `λvals::AbstractVector{<:Real}`: Values of λ to search over [nλ]
-- `ρvals::AbstractVector{<:Real}`: Values of ρ to search over [nρ]
-- `weights::AbstractVector{<:Real}`: Weights for calculating holdout cost [L];
-  omit if L = 1
-- `xDistsTest`: Distributions of latent parameters [L] or scalar (if L = 1);
+- `λvals::AbstractVector{<:Real}`: Values of λ to search over \\[nλ\\]
+- `ρvals::AbstractVector{<:Real}`: Values of ρ to search over \\[nρ\\]
+- `weights::AbstractVector{<:Real}`: Weights for calculating holdout cost
+  \\[L\\]; omit if L = 1
+- `xDistsTest`: Distributions of latent parameters \\[L\\] or scalar (if L = 1);
   `xDists` can be any object such that `rand(xDists, ::Integer)` is defined (or
   a collection of such objects)
-- `νDistsTest`: Distributions of known parameters [K] or scalar (if K = 1);
+- `νDistsTest`: Distributions of known parameters \\[K\\] or scalar (if K = 1);
   `νDists` can be any object such that `rand(νDists, ::Integer)` is defined (or
   a collection of such objects); omit this parameter if K = 0
-- `xDistsTrain`: Distributions of latent parameters [L] or scalar (if L = 1);
-  `xDists` can be any object such that `rand(xDists, ::Integer)` is defined (or
-  a collection of such objects)
-- `νDistsTrain`: Distributions of known parameters [K] or scalar (if K = 1);
+- `xDistsTrain`: Distributions of latent parameters \\[L\\] or scalar
+  (if L = 1); `xDists` can be any object such that `rand(xDists, ::Integer)` is
+  defined (or a collection of such objects)
+- `νDistsTrain`: Distributions of known parameters \\[K\\] or scalar (if K = 1);
   `νDists` can be any object such that `rand(νDists, ::Integer)` is defined (or
   a collection of such objects); omit this parameter if K = 0
 - `noiseDist`: Distribution of noise (assumes same noise distribution for both
   real and imaginary channels in complex case); `noiseDist` can be any object
   such that `rand(noiseDist, ::Integer)` is defined
 - `signalModels::Union{<:Function,<:AbstractVector{<:Function}}`: Signal models
-  used to generate noiseless data [numSignalModels]; each signal model accepts
-  as inputs L latent parameters (scalars) first, then K known parameters
+  used to generate noiseless data \\[numSignalModels\\]; each signal model
+  accepts as inputs L latent parameters (scalars) first, then K known parameters
   (scalars); user-defined parameters (e.g., scan parameters in MRI) should be
   built into the signal model
 - `kernelgenerator::Function`: Function that creates a `Kernel` object given a
   vector `Λ` of lengthscales
 - `showprogress::Bool = false`: Whether to show progress
+
+## Note
+- L is the number of unknown or latent parameters to be estimated
+- K is the number of known parameters
+- nλ is the number of λ values to try
+- nρ is the number of ρ values to try
 
 # Return
 - `λ::Real`: Bandwidth scaling parameter

@@ -36,13 +36,19 @@ Evaluate the Euclidean inner product between `p` and `q`.
 
 # Arguments
 - `p::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: First
-  kernel input [Q,M] or [M] (if Q = 1) or scalar (if Q = M = 1)
+  kernel input [Q,M] or \\[M\\] (if Q = 1) or scalar (if Q = M = 1)
 - `q::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Second
-  kernel input [Q,N] or [N] (if Q = 1) or scalar (if Q = N = 1)
+  kernel input [Q,N] or \\[N\\] (if Q = 1) or scalar (if Q = N = 1)
+
+# Note
+- Q is the number of features
+- M is the number of feature vectors in the first input
+- N is the number of feature vectors in the second input
 
 # Return
 - `K::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Kernel
-  output [M,N] or [M] (if N = 1) or [N] (if M = 1) or scalar (if M = N = 1)
+  output [M,N] or \\[M\\] (if N = 1) or \\[N\\] (if M = 1) or scalar
+  (if M = N = 1)
 """
 function (k::EuclideanKernel)(
     p::AbstractMatrix{<:Real},
@@ -113,8 +119,11 @@ end
 Create a Gaussian kernel function.
 
 # Properties
-- `Λ::Union{<:Real,AbstractVector{<:Real}}`: Length scales [Q] or scalar (if
+- `Λ::Union{<:Real,AbstractVector{<:Real}}`: Length scales \\[Q\\] or scalar (if
   Q = 1)
+
+# Note
+- Q is the number of features
 """
 struct GaussianKernel{T<:Union{<:Real,<:AbstractVector{<:Real}}} <: ExactKernel
     Λ::T
@@ -132,13 +141,19 @@ Evaluate the Gaussian kernel.
 
 # Arguments
 - `p::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: First
-  kernel input [Q,M] or [M] (if Q = 1) or scalar (if Q = M = 1)
+  kernel input [Q,M] or \\[M\\] (if Q = 1) or scalar (if Q = M = 1)
 - `q::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Second
-  kernel input [Q,N] or [N] (if Q = 1) or scalar (if Q = N = 1)
+  kernel input [Q,N] or \\[N\\] (if Q = 1) or scalar (if Q = N = 1)
+
+## Note
+- Q is the number of features
+- M is the number of feature vectors in the first input
+- N is the number of feature vectors in the second input
 
 # Return
 - `K::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Kernel
-  output [M,N] or [M] (if N = 1) or [N] (if M = 1) or scalar (if M = N = 1)
+  output [M,N] or \\[M\\] (if N = 1) or \\[N\\] (if M = 1) or scalar
+  (if M = N = 1)
 """
 function (k::GaussianKernel)(
     p::AbstractMatrix{<:Real},
@@ -245,8 +260,11 @@ Create an approximate (via random Fourier features) Gaussian kernel function.
 
 # Properties
 - `H::Integer`: Approximation order
-- `Λ::Union{<:Real,AbstractVector{<:Real}}`: Length scales [Q] or scalar (if
+- `Λ::Union{<:Real,AbstractVector{<:Real}}`: Length scales \\[Q\\] or scalar (if
   Q = 1)
+
+## Note
+- Q is the number of features
 """
 struct GaussianRFF{T1<:Integer,T2<:Union{<:Real,<:AbstractVector{<:Real}}} <: RFFKernel
     H::T1
@@ -265,17 +283,22 @@ Evaluate the approximate Gaussian kernel.
 
 # Arguments
 - `q::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Kernel
-  input [Q,N] or [N] (if Q = 1) or scalar (if Q = N = 1)
+  input [Q,N] or \\[N\\] (if Q = 1) or scalar (if Q = N = 1)
 - `f::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}} = randn(k.H, Q)`:
-  Unscaled random frequency values [H,Q] or [H] (if Q = 1)
-- `phase::AbstractVector{<:Real} = rand(k.H)`: Random phase values [H]
+  Unscaled random frequency values [H,Q] or \\[H\\] (if Q = 1)
+- `phase::AbstractVector{<:Real} = rand(k.H)`: Random phase values \\[H\\]
+
+## Note
+- Q is the number of features
+- N is the number of feature vectors in the input
+- H is the approximation order for the random Fourier features
 
 # Return
 - `z::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`:
-  Higher-dimensional features [H,N] or [H] (if N = 1)
+  Higher-dimensional features [H,N] or \\[H\\] (if N = 1)
 - `freq::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Random
-  frequency values [H,Q] or [H] (if Q = 1)
-- `phase::AbstractVector{<:Real}`: Random phase values [H]
+  frequency values [H,Q] or \\[H\\] (if Q = 1)
+- `phase::AbstractVector{<:Real}`: Random phase values \\[H\\]
 """
 function (k::GaussianRFF)(
     q::AbstractMatrix{<:Real}
@@ -363,14 +386,20 @@ Map features to a higher dimensional space via random Fourier features.
 
 # Arguments
 - `q::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`:
-  Lower-dimensional features [Q,N] or [N] (if Q = 1) or scalar (if Q = N = 1)
+  Lower-dimensional features [Q,N] or \\[N\\] (if Q = 1) or scalar
+  (if Q = N = 1)
 - `freq::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}`: Random
-  frequency values [H,Q] or [H] (if Q = 1)
-- `phase::AbstractVector{<:Real}`: Random phase values [H]
+  frequency values [H,Q] or \\[H\\] (if Q = 1)
+- `phase::AbstractVector{<:Real}`: Random phase values \\[H\\]
+
+## Note
+- Q is the number of features
+- N is the number of feature vectors in the input
+- H is the approximation order for the random Fourier features
 
 # Return
 - `z::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`:
-  Higher-dimensional features [H,N] or [H] (if N = 1)
+  Higher-dimensional features [H,N] or \\[H\\] (if N = 1)
 """
 function rffmap(
     q::AbstractMatrix{<:Real},

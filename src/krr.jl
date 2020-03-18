@@ -5,15 +5,15 @@ Train kernel ridge regression.
 
 # Arguments
 - `xtrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Latent
-  parameters for training data [L,T] or [T] (if L = 1)
+  parameters for training data [L,T] or \\[T\\] (if L = 1)
 - `ytrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Features
-  for training data [Q,T] or [T] (if Q = 1)
+  for training data [Q,T] or \\[T\\] (if Q = 1)
 - `kernel::Kernel`: Kernel to use
 - `ρ::Real`: Tikhonov regularization parameter
 - `f::Union{<:AbstractVector{<:Real},AbstractMatrix{<:Real}} = randn(kernel.H, Q)`:
-  Unscaled random frequency values [H,Q] or [H] (if Q = 1) (used when
+  Unscaled random frequency values [H,Q] or \\[H\\] (if Q = 1) (used when
   `kernel isa RFFKernel`)
-- `phase::AbstractVector{<:Real} = rand(kernel.H)`: Random phase values [H]
+- `phase::AbstractVector{<:Real} = rand(kernel.H)`: Random phase values \\[H\\]
   (used when `kernel isa RFFKernel`)
 
 ## Note
@@ -188,7 +188,7 @@ Predict latent parameters that generated `ytest` using kernel ridge regression.
 
 # Arguments
 - `ytest::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`:
-  Observed test data [Q,N] or [N] (if Q = 1) or scalar (if Q = N = 1)
+  Observed test data [Q,N] or \\[N\\] (if Q = 1) or scalar (if Q = N = 1)
 - `trainData::TrainingData`: Training data
 - `kernel::Kernel`: Kernel to use
 
@@ -198,7 +198,7 @@ Predict latent parameters that generated `ytest` using kernel ridge regression.
 
 # Return
 - `xhat::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`:
-  Estimated latent parameters [L,N] or [N] (if L = 1) or [L] (if N = 1) or
+  Estimated latent parameters [L,N] or \\[N\\] (if L = 1) or \\[L\\] (if N = 1) or
   scalar (if L = N = 1)
 """
 function krr(
