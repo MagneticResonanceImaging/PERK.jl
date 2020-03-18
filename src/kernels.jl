@@ -119,8 +119,8 @@ end
 Create a Gaussian kernel function.
 
 # Properties
-- `Λ::Union{<:Real,AbstractVector{<:Real}}`: Length scales \\[Q\\] or scalar (if
-  Q = 1)
+- `Λ::Union{<:Real,AbstractVector{<:Real}}`: Length scales \\[Q\\] or scalar
+  (if Q = 1)
 
 # Note
 - Q is the number of features
@@ -132,6 +132,40 @@ struct GaussianKernel{T<:Union{<:Real,<:AbstractVector{<:Real}}} <: ExactKernel
         length(Λ) == 1 && (Λ = Λ[])
         new{typeof(Λ)}(Λ)
     end
+end
+
+"""
+    GuassianKernel(Λy, [Λν])
+
+Create a Guassian kernel function.
+
+# Arguments
+- `Λy::Union{<:Number,<:AbstractVector{<:Number}}`: Length scales for features
+  \\[Q\\] or scalar (if Q = 1)
+- `Λν::Union{<:Real,<:AbstractVector{<:Real}}`: Length scales for known
+  parameters \\[K\\] or scalar (if K = 1)
+"""
+function GaussianKernel(
+    Λ::Union{<:Complex,<:AbstractVector{<:Complex}}
+)
+
+    Λ = reduce(vcat, ([real(Λ[i]), imag(Λ[i])] for i = 1:length(Λ)))
+
+    return GaussianKernel(Λ)
+
+end
+
+function GaussianKernel(
+    Λy::Union{<:Number,<:AbstractVector{<:Number}},
+    Λν::Union{<:Real,<:AbstractVector{<:Real}}
+)
+
+    if eltype(Λy) <: Complex
+        Λy = reduce(vcat, ([real(Λy[i]), imag(Λy[i])] for i = 1:length(Λy)))
+    end
+
+    return GaussianKernel([Λy; Λν])
+
 end
 
 """
@@ -274,6 +308,43 @@ struct GaussianRFF{T1<:Integer,T2<:Union{<:Real,<:AbstractVector{<:Real}}} <: RF
         length(Λ) == 1 && (Λ = Λ[])
         new{typeof(H),typeof(Λ)}(H, Λ)
     end
+end
+
+"""
+    GuassianRFF(H, Λy, [Λν])
+
+Create an approximate (via random Fourier features) Gaussian kernel function.
+
+# Arguments
+- `H::Integer`: Approximation order
+- `Λy::Union{<:Number,<:AbstractVector{<:Number}}`: Length scales for features
+  \\[Q\\] or scalar (if Q = 1)
+- `Λν::Union{<:Real,<:AbstractVector{<:Real}}`: Length scales for known
+  parameters \\[K\\] or scalar (if K = 1)
+"""
+function GaussianRFF(
+    H::Integer,
+    Λ::Union{<:Complex,<:AbstractVector{<:Complex}}
+)
+
+    Λ = reduce(vcat, ([real(Λ[i]), imag(Λ[i])] for i = 1:length(Λ)))
+
+    return GaussianRFF(H, Λ)
+
+end
+
+function GaussianRFF(
+    H::Integer,
+    Λy::Union{<:Number,<:AbstractVector{<:Number}},
+    Λν::Union{<:Real,<:AbstractVector{<:Real}}
+)
+
+    if eltype(Λy) <: Complex
+        Λy = reduce(vcat, ([real(Λy[i]), imag(Λy[i])] for i = 1:length(Λy)))
+    end
+
+    return GaussianRFF(H, [Λy; Λν])
+
 end
 
 """

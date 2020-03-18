@@ -5,8 +5,8 @@
 Train PERK and then estimate latent parameters.
 
 # Arguments
-- `y::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Test
-  data points [D,N] or \\[N\\] (if D = 1) or scalar (if D = N = 1)
+- `y::Union{<:Number,<:AbstractVector{<:Number},<:AbstractMatrix{<:Number}}`:
+  Test data points [D,N] or \\[N\\] (if D = 1) or scalar (if D = N = 1)
 - `ν::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Known
   parameters [K,N] or \\[N\\] (if K = 1) or scalar (if K = N = 1); omit this
   parameter if K = 0
@@ -41,7 +41,7 @@ Train PERK and then estimate latent parameters.
   or scalar (if L = N = 1)
 """
 function perk(
-    y::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    y::Union{<:Number,<:AbstractVector{<:Number},<:AbstractMatrix{<:Number}},
     T::Integer,
     xDists,
     noiseDist,
@@ -57,7 +57,7 @@ function perk(
 end
 
 function perk(
-    y::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    y::Union{<:Number,<:AbstractVector{<:Number},<:AbstractMatrix{<:Number}},
     ν::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     T::Integer,
     xDists,
@@ -81,8 +81,8 @@ end
 Estimate latent parameters using the provided training data.
 
 # Arguments
-- `y::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Test
-  data points [D,N] or \\[N\\] (if D = 1) or scalar (if D = N = 1)
+- `y::Union{<:Number,<:AbstractVector{<:Number},<:AbstractMatrix{<:Number}}`:
+  Test data points [D,N] or \\[N\\] (if D = 1) or scalar (if D = N = 1)
 - `ν::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Known
   parameters [K,N] or \\[N\\] (if K = 1) or scalar (if K = N = 1); omit this
   parameter if K = 0
@@ -95,21 +95,25 @@ Estimate latent parameters using the provided training data.
   or scalar (if L = N = 1)
 """
 function perk(
-    y::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    y::Union{<:Number,<:AbstractVector{<:Number},<:AbstractMatrix{<:Number}},
     trainData::TrainingData,
     kernel::Kernel
 )
+
+    eltype(y) <: Complex && (y = complex2real(y))
 
     return krr(y, trainData, kernel)
 
 end
 
 function perk(
-    y::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    y::Union{<:Number,<:AbstractVector{<:Number},<:AbstractMatrix{<:Number}},
     ν::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     trainData::TrainingData,
     kernel::Kernel
 )
+
+    eltype(y) <: Complex && (y = complex2real(y))
 
     q = combine(y, ν)
 

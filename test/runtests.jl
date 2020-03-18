@@ -9,5 +9,6 @@ using Test
     include("kernels.jl")
     include("krr.jl")
     include("estimation.jl")
+    include("complex.jl")
     include("holdout.jl")
 end

@@ -150,6 +150,8 @@ function train(
 
     (y, x) = generatenoisydata(T, xDists, noiseDist, signalModels)
 
+    eltype(y) <: Complex && (y = complex2real(y))
+
     return krr_train(x, y, kernel, ρ)
 
 end
@@ -166,9 +168,40 @@ function train(
 
     (y, x, ν) = generatenoisydata(T, xDists, νDists, noiseDist, signalModels)
 
+    eltype(y) <: Complex && (y = complex2real(y))
+
     q = combine(y, ν) # [D+K,T]
 
     return krr_train(x, q, kernel, ρ)
+
+end
+
+"""
+    complex2real(y)
+
+Split complex data into real and imaginary parts.
+"""
+function complex2real(
+    y::Complex
+)
+
+    return reshape([real(y), imag(y)], :, 1) # [D=2,T=1]
+
+end
+
+function complex2real(
+    y::AbstractVector{<:Complex} # [T]
+)
+
+    return [real.(y) imag.(y)]' # [D=2,T]
+
+end
+
+function complex2real(
+    y::AbstractMatrix{<:Complex} # [D,T]
+)
+
+    return reduce(vcat, (complex2real(@view(y[i,:])) for i = 1:size(y, 1))) # [2D,T]
 
 end
 
@@ -263,8 +296,8 @@ Generate noisy data from unknown (and possibly known) parameter distributions.
   built into the signal model
 
 # Return
-- `y::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Output
-  magnitude data of all the (simulated) signals [D,N] or \\[N\\] (if D = 1)
+- `y::Union{<:AbstractVector{<:Number},<:AbstractMatrix{<:Number}}`: Output
+  data of all the (simulated) signals [D,N] or \\[N\\] (if D = 1)
 - `x::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Randomly
   generated latent parameters [L,N] or \\[N\\] (if L = 1)
 - `ν::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Randomly
@@ -293,8 +326,8 @@ function generatenoisydata(
     # Reshape x
     xDists isa AbstractVector && (x = transpose(reduce(hcat, x))) # [L,N]
 
-    # Return magnitude data and random latent parameters
-    return (abs.(y), x)
+    # Return simulated data and random latent parameters
+    return (y, x)
 
 end
 
@@ -327,8 +360,8 @@ function generatenoisydata(
     xDists isa AbstractVector && (x = transpose(reduce(hcat, x))) # [L,N]
     νDists isa AbstractVector && (ν = transpose(reduce(hcat, ν))) # [K,N]
 
-    # Return magnitude data and random latent and known parameters
-    return (abs.(y), x, ν)
+    # Return simulated data and random latent and known parameters
+    return (y, x, ν)
 
 end
 
