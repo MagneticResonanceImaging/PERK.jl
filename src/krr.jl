@@ -47,11 +47,8 @@ function krr_train(
     K = K .- Km # [T,T]
     K = K .- mean(K, dims = 1) # [T,T]
 
-    # Compute the (regularized) inverse of K
-    Kinv = inv(K + T * ρ * I) # [T,T]
-
-    # Multiply by xtrain
-    xKinv = transpose(Kinv) * xtrain # [T]
+    # Compute the (regularized) inverse of K and multiply by xtrain
+    xKinv = transpose(K + T * ρ * I) \ xtrain # [T]
 
     return ExactTrainingData(ytrain, xtrain, xm, K, Km, xKinv)
 
@@ -79,11 +76,8 @@ function krr_train(
     K = K .- Km # [T,T]
     K = K .- mean(K, dims = 1) # [T,T]
 
-    # Compute the (regularized) inverse of K
-    Kinv = inv(K + T * ρ * I) # [T,T]
-
-    # Multiply by xtrain
-    xKinv = xtrain * Kinv # [L,T]
+    # Compute the (regularized) inverse of K and multiply by xtrain
+    xKinv = xtrain / (K + T * ρ * I) # [L,T]
 
     return ExactTrainingData(ytrain, xtrain, xm, K, Km, xKinv)
 
@@ -140,11 +134,8 @@ function _krr_train(
     Czz = div0.(z * z', T) # [H,H]
     Cxz = div0.(z * xtrain, T) # [H]
 
-    # Calculate the (regularized) inverse of Czz
-    Czzinv = inv(Czz + ρ * I) # [H,H]
-
-    # Multiply by Cxz
-    CxzCzzinv = transpose(Czzinv) * Cxz # [H]
+    # Calculate the (regularized) inverse of Czz and multiply by Cxz
+    CxzCzzinv = transpose(Czz + ρ * I) \ Cxz # [H]
 
     return RFFTrainingData(freq, phase, zm, xm, Czz, Cxz, CxzCzzinv)
 
@@ -171,11 +162,8 @@ function _krr_train(
     Czz = div0.(z * z', T) # [H,H]
     Cxz = div0.(xtrain * z', T) # [L,H]
 
-    # Calculate the (regularized) inverse of Czz
-    Czzinv = inv(Czz + ρ * I) # [H,H]
-
-    # Multiply by Cxz
-    CxzCzzinv = Cxz * Czzinv # [L,H]
+    # Calculate the (regularized) inverse of Czz and multiply by Cxz
+    CxzCzzinv = Cxz / (Czz + ρ * I) # [L,H]
 
     return RFFTrainingData(freq, phase, zm, xm, Czz, Cxz, CxzCzzinv)
 
