@@ -1,7 +1,7 @@
 # PERK.jl
 
-[![Build Status](https://travis-ci.org/StevenWhitaker/PERK.jl.svg?branch=master)](https://travis-ci.org/StevenWhitaker/PERK.jl)
-[![codecov](https://codecov.io/gh/StevenWhitaker/PERK.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/StevenWhitaker/PERK.jl)
+[![action status](https://github.com/StevenWhitaker/PERK.jl/actions/workflows/runtests.yml/badge.svg)](https://github.com/StevenWhitaker/PERK.jl/actions)
+[![codecov](https://codecov.io/gh/StevenWhitaker/PERK.jl/branch/main/graph/badge.svg?token=qnZeOeEuBM)](https://codecov.io/gh/StevenWhitaker/PERK.jl)
 
 This package implements PERK, a parameter estimation technique presented in
 [G. Nataraj, J.-F. Nielsen, C. Scott, and J. A. Fessler. Dictionary-free MRI PERK: Parameter estimation via regression with kernels. IEEE Trans. Med. Imag., 37(9):2103-14, September 2018](https://ieeexplore.ieee.org/document/8320384/).
