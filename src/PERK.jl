@@ -13,7 +13,7 @@ Module implementing parameter estimation via regression with kernels (PERK).
 """
 module PERK
 
-using LinearAlgebra: I, Diagonal, norm
+using LinearAlgebra: Diagonal, I, ldiv!, lu, norm, rdiv!
 using Statistics: mean
 
 include("utils.jl")

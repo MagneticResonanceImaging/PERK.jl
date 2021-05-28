@@ -145,7 +145,7 @@ function test_perk_7()
     ν = ones(1, 1)
     y = f(xtrue, ν[])
     T = 200
-    kernel = GaussianKernel([1, 1])
+    kernel = GaussianKernel([1.0, 1.0])
     xDists = Uniform(0, 20)
     νDists = [Uniform(0, 2)]
     noiseDist = Normal(0, 0.01)
@@ -166,7 +166,7 @@ function test_perk_8()
     ν = 1
     y = f(xtrue, ν)
     T = 200
-    kernel = GaussianKernel([1, 1])
+    kernel = GaussianKernel([1.0, 1.0])
     xDists = Uniform(0, 20)
     νDists = Uniform(0, 2)
     noiseDist = Normal(0, 0.01)

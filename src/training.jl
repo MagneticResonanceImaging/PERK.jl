@@ -30,7 +30,7 @@ K.
 struct ExactTrainingData{
     T1<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     T2<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
-    T3<:Union{<:Real,<:AbstractVector{<:Real}},
+    T3<:Union{<:Ref{<:Real},<:AbstractVector{<:Real}},
     T4<:AbstractMatrix{<:Real},
     T5<:AbstractVector{<:Real},
     T6<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}
@@ -42,6 +42,38 @@ struct ExactTrainingData{
     Km::T5
     xKinv::T6
 end
+
+ExactTrainingData(::Type{<:AbstractVector}, eltype, T) =
+    ExactTrainingData(Vector{eltype}(undef, T),
+                      Vector{eltype}(undef, T),
+                      Ref{eltype}(),
+                      Matrix{eltype}(undef, T, T),
+                      Vector{eltype}(undef, T),
+                      Vector{eltype}(undef, T))
+
+ExactTrainingData(::Type{<:AbstractMatrix}, eltype, Q, T) =
+    ExactTrainingData(Matrix{eltype}(undef, Q, T),
+                      Vector{eltype}(undef, T),
+                      Ref{eltype}(),
+                      Matrix{eltype}(undef, T, T),
+                      Vector{eltype}(undef, T),
+                      Vector{eltype}(undef, T))
+
+ExactTrainingData(::Type{<:AbstractVector}, eltype, L, T) =
+    ExactTrainingData(Vector{eltype}(undef, T),
+                      Matrix{eltype}(undef, L, T),
+                      Vector{eltype}(undef, L),
+                      Matrix{eltype}(undef, T, T),
+                      Vector{eltype}(undef, T),
+                      Matrix{eltype}(undef, L, T))
+
+ExactTrainingData(::Type{<:AbstractMatrix}, eltype, L, Q, T) =
+    ExactTrainingData(Matrix{eltype}(undef, Q, T),
+                      Matrix{eltype}(undef, L, T),
+                      Vector{eltype}(undef, L),
+                      Matrix{eltype}(undef, T, T),
+                      Vector{eltype}(undef, T),
+                      Matrix{eltype}(undef, L, T))
 
 Base.getproperty(data::ExactTrainingData, s::Symbol) = begin
     if s == :Q

@@ -55,12 +55,7 @@ function (k::EuclideanKernel)(
     q::AbstractMatrix{<:Real}
 )
 
-    # Get the sizes of p and q
-    M = size(p, 2)
-    N = size(q, 2)
-
-    # Compute the kernel function
-    return [p[:,m]' * q[:,n] for m = 1:M, n = 1:N]
+    return p' * q
 
 end
 
@@ -69,11 +64,7 @@ function (k::EuclideanKernel)(
     q::AbstractMatrix{<:Real} # [Q,N]
 )
 
-    size(q, 1) == 1 ||
-        throw(DimensionMismatch("p has feature dimension equal to 1, but q " *
-                                "has a larger feature dimension"))
-
-    return k(p, vec(q))
+    return k(reshape(p, 1, :), q)
 
 end
 
@@ -82,7 +73,7 @@ function (k::EuclideanKernel)(
     q::AbstractVector{<:Real}
 )
 
-    return p * q'
+    return k(reshape(p, 1, :), reshape(q, 1, :))
 
 end
 
@@ -91,7 +82,7 @@ function (k::EuclideanKernel)(
     q::Real
 )
 
-    return p * q'
+    return conj(p) * q
 
 end
 
@@ -100,7 +91,7 @@ function (k::EuclideanKernel)(
     q::AbstractVector{<:Real}
 )
 
-    return p * conj(q)
+    return conj(p) * q
 
 end
 
@@ -109,7 +100,72 @@ function (k::EuclideanKernel)(
     q::Real
 )
 
-    return p * q'
+    return conj(p) * q
+
+end
+
+function (k!::EuclideanKernel)(
+    out::AbstractMatrix{<:Real},
+    p::AbstractMatrix{<:Real},
+    q::AbstractMatrix{<:Real}
+)
+
+    for i in CartesianIndices(out)
+        @views out[i] = p[:,i[1]]' * q[:,i[2]]
+    end
+
+end
+
+function (k!::EuclideanKernel)(
+    out::AbstractMatrix{<:Real},
+    p::AbstractVector{<:Real}, # [M]
+    q::AbstractMatrix{<:Real} # [Q,N]
+)
+
+    k!(out, reshape(p, 1, :), q)
+
+end
+
+function (k!::EuclideanKernel)(
+    out::AbstractMatrix{<:Real},
+    p::AbstractVector{<:Real},
+    q::AbstractVector{<:Real}
+)
+
+    k!(out, reshape(p, 1, :), reshape(q, 1, :))
+
+end
+
+function (k!::EuclideanKernel)(
+    out::AbstractVector{<:Real},
+    p::AbstractVector{<:Real},
+    q::Real
+)
+
+    out .= conj.(p) .* q
+    return nothing
+
+end
+
+function (k!::EuclideanKernel)(
+    out::AbstractVector{<:Real},
+    p::Real,
+    q::AbstractVector{<:Real}
+)
+
+    out .= conj.(p) .* q
+    return nothing
+
+end
+
+# Already no allocations, so in-place version not really needed
+function (k!::EuclideanKernel)(
+    ::Nothing,
+    p::Real,
+    q::Real
+)
+
+    return conj(p) * q
 
 end
 
@@ -121,16 +177,22 @@ Create a Gaussian kernel function.
 # Properties
 - `Λ::Union{<:Real,AbstractVector{<:Real}}`: Length scales \\[Q\\] or scalar
   (if Q = 1)
+- `workspace::Union{<:AbstractVector{Float64},Nothing}`: Workspace for computing
+  the Gaussian kernel; `nothing` if Q = 1
 
 # Note
 - Q is the number of features
 """
-struct GaussianKernel{T<:Union{<:Real,<:AbstractVector{<:Real}}} <: ExactKernel
+struct GaussianKernel{T<:Union{<:Real,<:AbstractVector{<:Real}},W<:Real} <: ExactKernel
     Λ::T
+    workspace::Vector{W}
 
     GaussianKernel(Λ::Union{<:Real,<:AbstractVector{<:Real}}) = begin
-        length(Λ) == 1 && (Λ = Λ[])
-        new{typeof(Λ)}(Λ)
+        Q = length(Λ)
+        Q == 1 && (Λ = Λ[])
+        T = eltype(Λ)
+        workspace = Vector{T}(undef, Q)
+        new{typeof(Λ),T}(Λ, workspace)
     end
 end
 
@@ -199,10 +261,10 @@ function (k::GaussianKernel)(
     N = size(q, 2)
 
     # Construct the square root of the Gaussian covariance matrix and invert it
-    sqrtΣ = Diagonal(1 ./ k.Λ)
+    sqrtΣ = 1 ./ k.Λ
 
     # Compute the kernel function
-    return [gaussiankernel(p[:,m], q[:,n], sqrtΣ) for m = 1:M, n = 1:N]
+    return [gaussiankernel!(p[:,m], q[:,n], sqrtΣ, k.workspace) for m = 1:M, n = 1:N]
 
 end
 
@@ -211,11 +273,7 @@ function (k::GaussianKernel)(
     q::AbstractMatrix{<:Real} # [Q,N]
 )
 
-    size(q, 1) == 1 ||
-        throw(DimensionMismatch("p has feature dimension equal to 1, but q " *
-                                "has a larger feature dimension"))
-
-    return k(p, vec(q))
+    return k(reshape(p, 1, :), q)
 
 end
 
@@ -224,15 +282,7 @@ function (k::GaussianKernel)(
     q::AbstractVector{<:Real}
 )
 
-    # Get the lengths of p and q
-    M = length(p)
-    N = length(q)
-
-    # Construct the square root of the Gaussian covariance matrix and invert it
-    sqrtΣ = 1 / k.Λ
-
-    # Compute the kernel function
-    return [gaussiankernel(p[m], q[n], sqrtΣ) for m = 1:M, n = 1:N]
+    return k(reshape(p, 1, :), reshape(q, 1, :))
 
 end
 
@@ -241,14 +291,11 @@ function (k::GaussianKernel)(
     q::Real
 )
 
-    # Get the length of p
-    M = length(p)
-
     # Construct the square root of the Gaussian covariance matrix and invert it
     sqrtΣ = 1 / k.Λ
 
     # Compute the kernel function
-    return [gaussiankernel(p[m], q, sqrtΣ) for m = 1:M]
+    return gaussiankernel.(p, q, sqrtΣ)
 
 end
 
@@ -275,15 +322,101 @@ function (k::GaussianKernel)(
 
 end
 
+function (k!::GaussianKernel)(
+    out::AbstractMatrix{<:Real},
+    p::AbstractMatrix{<:Real},
+    q::AbstractMatrix{<:Real}
+)
+
+    # Construct the square root of the Gaussian covariance matrix and invert it
+    sqrtΣ = 1 ./ k!.Λ
+
+    for i in CartesianIndices(out)
+        @views out[i] = gaussiankernel!(p[:,i[1]], q[:,i[2]], sqrtΣ, k!.workspace)
+    end
+
+end
+
+function (k!::GaussianKernel)(
+    out::AbstractMatrix{<:Real},
+    p::AbstractVector{<:Real}, # [M]
+    q::AbstractMatrix{<:Real} # [Q,N]
+)
+
+    k!(out, reshape(p, 1, :), q)
+
+end
+
+function (k!::GaussianKernel)(
+    out::AbstractMatrix{<:Real},
+    p::AbstractVector{<:Real},
+    q::AbstractVector{<:Real}
+)
+
+    k!(out, reshape(p, 1, :), reshape(q, 1, :))
+
+end
+
+function (k!::GaussianKernel)(
+    out::AbstractVector{<:Real},
+    p::AbstractVector{<:Real},
+    q::Real
+)
+
+    # Construct the square root of the Gaussian covariance matrix and invert it
+    sqrtΣ = 1 / k!.Λ
+
+    # Compute the kernel function
+    out .= gaussiankernel.(p, q, sqrtΣ)
+    return nothing
+
+end
+
+function (k!::GaussianKernel)(
+    out::AbstractVector{<:Real},
+    p::Real,
+    q::AbstractVector{<:Real}
+)
+
+    # Gaussian kernel is symmetric, so just swap the order of inputs
+    k!(out, q, p)
+
+end
+
+# Already no allocations, so in-place version not really needed
+function (k::GaussianKernel)(
+    ::Nothing,
+    p::Real,
+    q::Real
+)
+
+    # Construct the square root of the Gaussian covariance matrix and invert it
+    sqrtΣ = 1 / k!.Λ
+
+    # Compute the kernel function
+    return gaussiankernel(p, q, sqrtΣ)
+
+end
+
 """
     gaussiankernel(p, q, sqrtΣ)
 
 Compute the Gaussian kernel with covariance matrix Σ evaluated at `p` and `q`.
 Note that function input is `sqrtΣ`, i.e., the square root of Σ.
+
+Currently, only diagonal covariance matrices are supported, and each must be
+passed in as a vector of the diagonal elements.
 """
 function gaussiankernel(p, q, sqrtΣ)
 
-    return exp(-0.5norm(sqrtΣ * (p - q))^2)
+    return exp(-0.5sum(abs2, sqrtΣ .* (p .- q)))
+
+end
+
+function gaussiankernel!(p, q, sqrtΣ, workspace)
+
+    workspace .= sqrtΣ .* (p .- q)
+    return exp(-0.5sum(abs2, workspace))
 
 end
 

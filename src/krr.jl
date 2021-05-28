@@ -32,25 +32,62 @@ function krr_train(
     ρ::Real
 )
 
+    T = promote_type(Float64, eltype(xtrain), eltype(ytrain))
+    Ty = typeof(ytrain)
+    if Ty <: AbstractVector
+        trainingdata = ExactTrainingData(Ty, T, length(ytrain))
+    else
+        trainingdata = ExactTrainingData(Ty, T, size(ytrain)...)
+    end
+    krr_train!(trainingdata, xtrain, ytrain, kernel, ρ)
+    return trainingdata
+
+end
+
+function krr_train!(
+    trainingdata::ExactTrainingData,
+    xtrain::AbstractVector{<:Real},
+    ytrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    kernel!::ExactKernel,
+    ρ::Real
+)
+
     # Grab the number of training points
     T = length(xtrain)
 
     # Evaluate the kernel on the training features
-    K = kernel(ytrain, ytrain) # [T,T]
+    kernel!(trainingdata.K, ytrain, ytrain) # [T,T]
 
     # Calculate the sample mean and de-mean the latent parameters
-    xm = mean(xtrain) # scalar (L = 1)
-    xtrain = xtrain .- xm # [T]
+    trainingdata.xm[] = mean(xtrain) # scalar (L = 1)
+    trainingdata.x .= xtrain .- trainingdata.xm[] # [T]
 
     # De-mean the rows and columns of the kernel output
-    Km = dropdims(mean(K, dims = 2), dims = 2) # [T]
-    K = K .- Km # [T,T]
-    K = K .- mean(K, dims = 1) # [T,T]
+    for t = 1:T
+        trainingdata.Km[t] = mean(trainingdata.K[t,i] for i = 1:T)
+    end
+    for t1 = 1:T
+        tmp = trainingdata.Km[t1]
+        for t2 = 1:T
+            trainingdata.K[t1,t2] -= tmp
+        end
+    end
+    for t2 = 1:T
+        m = mean(trainingdata.K[i,t2] for i = 1:T)
+        for t1 = 1:T
+            trainingdata.K[t1,t2] -= m
+        end
+    end
 
     # Compute the (regularized) inverse of K and multiply by xtrain
-    xKinv = transpose(K + T * ρ * I) \ xtrain # [T]
+    F = lu(transpose(trainingdata.K + T * ρ * I))
+    copyto!(trainingdata.xKinv, trainingdata.x)
+    ldiv!(F, trainingdata.xKinv) # [T]
 
-    return ExactTrainingData(ytrain, xtrain, xm, K, Km, xKinv)
+    # Copy ytrain
+    copyto!(trainingdata.y, ytrain)
+
+    return nothing
 
 end
 
@@ -61,25 +98,67 @@ function krr_train(
     ρ::Real
 )
 
-    # Grab the number of training points
-    T = size(xtrain, 2)
+    T = promote_type(Float64, eltype(xtrain), eltype(ytrain))
+    Ty = typeof(ytrain)
+    if Ty <: AbstractVector
+        trainingdata = ExactTrainingData(Ty, T, size(xtrain)...)
+    else
+        trainingdata = ExactTrainingData(Ty, T, size(xtrain, 1), size(ytrain)...)
+    end
+    krr_train!(trainingdata, xtrain, ytrain, kernel, ρ)
+    return trainingdata
+
+end
+
+function krr_train!(
+    trainingdata::ExactTrainingData,
+    xtrain::AbstractMatrix{<:Real},
+    ytrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    kernel!::ExactKernel,
+    ρ::Real
+)
+
+    # Grab the number of latent parameters and training points
+    (L, T) = size(xtrain)
 
     # Evaluate the kernel on the training features
-    K = kernel(ytrain, ytrain) # [T,T]
+    kernel!(trainingdata.K, ytrain, ytrain) # [T,T]
 
     # Calculate the sample mean and de-mean the latent parameters
-    xm = dropdims(mean(xtrain, dims = 2), dims = 2) # [L]
-    xtrain = xtrain .- xm # [L,T]
+    for l = 1:L
+        m = mean(xtrain[l,t] for t = 1:T)
+        trainingdata.xm[l] = m
+        for t = 1:T
+            trainingdata.x[l,t] = xtrain[l,t] - m
+        end
+    end
 
     # De-mean the rows and columns of the kernel output
-    Km = dropdims(mean(K, dims = 2), dims = 2) # [T]
-    K = K .- Km # [T,T]
-    K = K .- mean(K, dims = 1) # [T,T]
+    for t = 1:T
+        trainingdata.Km[t] = mean(trainingdata.K[t,i] for i = 1:T)
+    end
+    for t1 = 1:T
+        tmp = trainingdata.Km[t1]
+        for t2 = 1:T
+            trainingdata.K[t1,t2] -= tmp
+        end
+    end
+    for t2 = 1:T
+        m = mean(trainingdata.K[i,t2] for i = 1:T)
+        for t1 = 1:T
+            trainingdata.K[t1,t2] -= m
+        end
+    end
 
     # Compute the (regularized) inverse of K and multiply by xtrain
-    xKinv = xtrain / (K + T * ρ * I) # [L,T]
+    F = lu(trainingdata.K + T * ρ * I)
+    copyto!(trainingdata.xKinv, trainingdata.x)
+    rdiv!(trainingdata.xKinv, F) # [L,T]
 
-    return ExactTrainingData(ytrain, xtrain, xm, K, Km, xKinv)
+    # Copy ytrain
+    copyto!(trainingdata.y, ytrain)
+
+    return nothing
 
 end
 
