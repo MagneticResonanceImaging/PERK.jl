@@ -90,16 +90,12 @@ Base.getproperty(data::ExactTrainingData, s::Symbol) = begin
 end
 
 """
-    RFFTrainingData(freq, phase, zm, xm, Czz, Cxz, CxzCzzinv) <: TrainingData
+    RFFTrainingData(zm, xm, Czz, Cxz, CxzCzzinv) <: TrainingData
 
 Create an object that contains the training data when using an approximation of
 the Gram matrix K using random Fourier features.
 
 # Properties
-- `freq::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Random
-  frequency values for random Fourier features [H,Q] or \\[H\\] (if Q = 1)
-- `phase::AbstractVector{<:Real}`: Random phase values for random Fourier
-  features \\[H\\]
 - `zm::AbstractVector{<:Real}`: Mean of feature maps \\[H\\]
 - `xm::Union{<:Real,<:AbstractVector{<:Real}}`: Mean of latent parameters
   \\[L\\] or scalar (if L = 1)
@@ -109,33 +105,25 @@ the Gram matrix K using random Fourier features.
   \\[H\\] (if L = 1)
 - `CxzCzzinv::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: `Cxz`
   times the regularized inverse of `Czz` [L,H] or \\[H\\] (if L = 1)
-- `Q::Integer`: Number of training features
 - `L::Integer`: Number of latent parameters
 - `H::Integer`: Kernel approximation order
 """
 struct RFFTrainingData{
-    T1<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
-    T2<:AbstractVector{<:Real},
-    T3<:AbstractVector{<:Real},
-    T4<:Union{<:Real,<:AbstractVector{<:Real}},
-    T5<:AbstractMatrix{<:Real},
-    T6<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
-    T7<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}
+    T1<:AbstractVector{<:Real},
+    T2<:Union{<:Real,<:AbstractVector{<:Real}},
+    T3<:AbstractMatrix{<:Real},
+    T4<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    T5<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}
 } <: TrainingData
-    freq::T1
-    phase::T2
-    zm::T3
-    xm::T4
-    Czz::T5
-    Cxz::T6
-    CxzCzzinv::T7
+    zm::T1
+    xm::T2
+    Czz::T3
+    Cxz::T4
+    CxzCzzinv::T5
 end
 
 Base.getproperty(data::RFFTrainingData, s::Symbol) = begin
-    if s == :Q
-        freq = getfield(data, :freq)
-        return ndims(freq) == 1 ? 1 : size(freq, 2)
-    elseif s == :L
+    if s == :L
         return length(getfield(data, :xm))
     elseif s == :H
         return length(getfield(data, :zm))

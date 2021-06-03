@@ -17,7 +17,8 @@ abstract type ExactKernel <: Kernel end
     RFFKernel <: Kernel
 
 Abstract type for representing kernels that are approximated via random Fourier
-features. `RFFKernel`s must be callable with one or three inputs.
+features. `RFFKernel`s must be callable with one input. `RFFKernel`s must have
+fields `freq` and `phase`.
 """
 abstract type RFFKernel <: Kernel end
 
@@ -187,12 +188,14 @@ struct GaussianKernel{T<:Union{<:Real,<:AbstractVector{<:Real}},W<:Real} <: Exac
     Λ::T
     workspace::Vector{W}
 
-    GaussianKernel(Λ::Union{<:Real,<:AbstractVector{<:Real}}) = begin
+    function GaussianKernel(Λ::Union{<:Real,<:AbstractVector{<:Real}})
+
         Q = length(Λ)
         Q == 1 && (Λ = Λ[])
         T = eltype(Λ)
         workspace = Vector{T}(undef, Q)
         new{typeof(Λ),T}(Λ, workspace)
+
     end
 end
 
@@ -421,76 +424,137 @@ function gaussiankernel!(p, q, sqrtΣ, workspace)
 end
 
 """
-    GaussianRFF(H, Λ) <: RFFKernel
+    GaussianRFF(Λ, freq, phase) <: RFFKernel
 
 Create an approximate (via random Fourier features) Gaussian kernel function.
 
 # Properties
-- `H::Integer`: Approximation order
 - `Λ::Union{<:Real,AbstractVector{<:Real}}`: Length scales \\[Q\\] or scalar (if
   Q = 1)
+- `freq::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}} = randn(k.H, Q)`:
+  Scaled random frequency values [H,Q] or \\[H\\] (if Q = 1)
+- `phase::AbstractVector{<:Real} = rand(k.H)`: Random phase values \\[H\\]
 
 ## Note
+- The `freq` input to `GaussianRFF` is *unscaled*, but is then scaled so that
+  `getproperty(::GaussianRFF, :freq)` returns the scaled random frequency values
+- H is the approximation order
 - Q is the number of features
 """
-struct GaussianRFF{T1<:Integer,T2<:Union{<:Real,<:AbstractVector{<:Real}}} <: RFFKernel
-    H::T1
-    Λ::T2
+struct GaussianRFF{T1<:Union{<:Real,<:AbstractVector{<:Real}},T2<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},T3<:AbstractVector{<:Real}} <: RFFKernel
+    Λ::T1
+    freq::T2
+    phase::T3
 
-    GaussianRFF(H::Integer, Λ::Union{<:Real,<:AbstractVector{<:Real}}) = begin
-        length(Λ) == 1 && (Λ = Λ[])
-        new{typeof(H),typeof(Λ)}(H, Λ)
+    function GaussianRFF(
+        Λ::Union{<:Real,<:AbstractVector{<:Real}},
+        freq::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+        phase::AbstractVector{<:Real}
+    )
+
+        Q = length(Λ)
+        if Q == 1
+            freq isa AbstractVector || (freq = dropdims(freq, dims = 2))
+            Λ = Λ[]
+            sqrtΣ = div0(1, 2π * Λ)
+        else
+            sqrtΣ = Diagonal(div0.(1, 2π * Λ))
+        end
+        # Scale freq by the square root of the inverse covariance matrix from
+        # which to draw the Gaussian samples
+        freq = freq * sqrtΣ
+        new{typeof(Λ),typeof(freq),typeof(phase)}(Λ, freq, phase)
+
     end
 end
 
 """
-    GuassianRFF(H, Λy, [Λν])
+    GuassianRFF(Λy, [Λν], H)
+    GuassianRFF(Λy, [Λν], freq, phase)
 
 Create an approximate (via random Fourier features) Gaussian kernel function.
 
 # Arguments
-- `H::Integer`: Approximation order
 - `Λy::Union{<:Number,<:AbstractVector{<:Number}}`: Length scales for features
   \\[Q\\] or scalar (if Q = 1)
 - `Λν::Union{<:Real,<:AbstractVector{<:Real}}`: Length scales for known
   parameters \\[K\\] or scalar (if K = 1)
+- `H::Integer`: Approximation order
+- `freq::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}} = randn(k.H, Q)`:
+  Unscaled random frequency values [H,Q] or \\[H\\] (if Q = 1)
+- `phase::AbstractVector{<:Real} = rand(k.H)`: Random phase values \\[H\\]
 """
 function GaussianRFF(
-    H::Integer,
-    Λ::Union{<:Complex,<:AbstractVector{<:Complex}}
+    Λ::Union{<:Number,<:AbstractVector{<:Number}},
+    H::Integer
 )
 
-    Λ = reduce(vcat, ([real(Λ[i]), imag(Λ[i])] for i = 1:length(Λ)))
+    if eltype(Λ) <: Complex
+        Λ = reduce(vcat, ([real(Λ[i]), imag(Λ[i])] for i = 1:length(Λ)))
+    end
 
-    return GaussianRFF(H, Λ)
+    freq = randn(H, length(Λ))
+    phase = rand(H)
+
+    return GaussianRFF(Λ, freq, phase)
 
 end
 
 function GaussianRFF(
-    H::Integer,
     Λy::Union{<:Number,<:AbstractVector{<:Number}},
-    Λν::Union{<:Real,<:AbstractVector{<:Real}}
+    Λν::Union{<:Real,<:AbstractVector{<:Real}},
+    H::Integer
 )
 
     if eltype(Λy) <: Complex
         Λy = reduce(vcat, ([real(Λy[i]), imag(Λy[i])] for i = 1:length(Λy)))
     end
 
-    return GaussianRFF(H, [Λy; Λν])
+    Λ = [Λy; Λν]
+    freq = randn(H, length(Λ))
+    phase = rand(H)
+
+    return GaussianRFF(Λ, freq, phase)
+
+end
+
+function GaussianRFF(
+    Λ::Union{<:Complex,<:AbstractVector{<:Complex}},
+    freq::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    phase::AbstractVector{<:Real}
+)
+
+    Λ = reduce(vcat, ([real(Λ[i]), imag(Λ[i])] for i = 1:length(Λ)))
+
+    return GaussianRFF(Λ, freq, phase)
+
+end
+
+function GaussianRFF(
+    Λy::Union{<:Number,<:AbstractVector{<:Number}},
+    Λν::Union{<:Real,<:AbstractVector{<:Real}},
+    freq::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    phase::AbstractVector{<:Real}
+)
+
+    if eltype(Λy) <: Complex
+        Λy = reduce(vcat, ([real(Λy[i]), imag(Λy[i])] for i = 1:length(Λy)))
+    end
+
+    Λ = [Λy; Λν]
+
+    return GaussianRFF(Λ, freq, phase)
 
 end
 
 """
-    (k::GaussianRFF)(q, [f, phase])
+    (k::GaussianRFF)(q)
 
 Evaluate the approximate Gaussian kernel.
 
 # Arguments
 - `q::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Kernel
   input [Q,N] or \\[N\\] (if Q = 1) or scalar (if Q = N = 1)
-- `f::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}} = randn(k.H, Q)`:
-  Unscaled random frequency values [H,Q] or \\[H\\] (if Q = 1)
-- `phase::AbstractVector{<:Real} = rand(k.H)`: Random phase values \\[H\\]
 
 ## Note
 - Q is the number of features
@@ -500,86 +564,13 @@ Evaluate the approximate Gaussian kernel.
 # Return
 - `z::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`:
   Higher-dimensional features [H,N] or \\[H\\] (if N = 1)
-- `freq::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Random
-  frequency values [H,Q] or \\[H\\] (if Q = 1)
-- `phase::AbstractVector{<:Real}`: Random phase values \\[H\\]
 """
 function (k::GaussianRFF)(
-    q::AbstractMatrix{<:Real}
+    q::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}
 )
-
-    # Get the first dimension of q
-    Q = size(q, 1)
-
-    # Generate random phase and unscaled frequency values
-    f = randn(k.H, Q)
-    phase = rand(k.H)
-
-    return k(q, f, phase)
-
-end
-
-function (k::GaussianRFF)(
-    q::Union{<:Real,<:AbstractVector{<:Real}}
-)
-
-    # Generate random phase and unscaled frequency values
-    f = randn(k.H)
-    phase = rand(k.H)
-
-    return k(q, f, phase)
-
-end
-
-function (k::GaussianRFF)(
-    q::AbstractMatrix{<:Real},
-    f::AbstractMatrix{<:Real},
-    phase::AbstractVector{<:Real}
-)
-
-    # Construct the covariance matrix from which to draw the Gaussian samples
-    # and take the square root
-    sqrtΣ = Diagonal(div0.(1, 2π .* k.Λ))
-
-    # Scale the random frequency values
-    freq = f * sqrtΣ
 
     # Map the features to a higher dimensional space via random Fourier features
-    # Also return freq and phase for use later
-    return (rffmap(q, freq, phase), freq, phase)
-
-end
-
-function (k::GaussianRFF)(
-    p::Union{<:Real,<:AbstractVector{<:Real}},
-    f::AbstractMatrix{<:Real},
-    phase::AbstractVector{<:Real}
-)
-
-    size(f, 2) == 1 ||
-        throw(DimensionMismatch("p has feature dimension equal to 1, but f " *
-                                "has a larger feature dimension"))
-
-    return k(p, vec(f), phase)
-
-end
-
-function (k::GaussianRFF)(
-    q::Union{<:Real,<:AbstractVector{<:Real}},
-    f::AbstractVector{<:Real},
-    phase::AbstractVector{<:Real}
-)
-
-    # Construct the covariance matrix from which to draw the Gaussian samples
-    # and take the square root
-    sqrtΣ = div0(1, 2π * k.Λ)
-
-    # Scale the random frequency values
-    freq = f * sqrtΣ
-
-    # Map the features to a higher dimensional space via random Fourier features
-    # Also return freq and phase for use later
-    return (rffmap(q, freq, phase), freq, phase)
+    return rffmap(q, k.freq, k.phase)
 
 end
 

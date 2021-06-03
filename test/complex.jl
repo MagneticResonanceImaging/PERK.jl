@@ -151,7 +151,7 @@ function test_complex_6()
     signalModels = f
     λ = 2.0^-1.5
     H = 2
-    kernel = GaussianRFF(H, λ * y)
+    kernel = GaussianRFF(λ * y, H)
     ρ = 2.0^-20
     xhat = perk(reshape(y, :, 1), T, xDists, noiseDist, signalModels, kernel, ρ)
     error_rel_real = abs(xhat[] - xtrue) / xtrue
@@ -166,7 +166,7 @@ function test_complex_6()
     signalModels = f
     λ = 2.0^-1.5
     H = 2
-    kernel = GaussianRFF(H, [λ * mean(y)])
+    kernel = GaussianRFF([λ * mean(y)], H)
     ρ = 2.0^-20
     xhat = perk(y, T, xDists, noiseDist, signalModels, kernel, ρ)
     error_rel_complex = abs(xhat[] - xtrue) / xtrue
@@ -187,12 +187,12 @@ function test_complex_7()
     signalModels = f
     λ = 2.0^-1.5
     H = 40
-    kernel = GaussianRFF(H, [λ * mean(y)])
+    kernel = GaussianRFF([λ * mean(y)], H)
     ρ = 2.0^-20
     xhat = perk(y, T, xDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
-    return isapprox(error_rel, 0.01699497197550329, atol = 1e-2)
+    return isapprox(error_rel, 0.04506605796079213, atol = 1e-2)
 
 end
 
@@ -211,7 +211,7 @@ function test_complex_8()
     signalModels = [f]
     λ = 2.0^-1.5
     H = 2
-    kernel = GaussianRFF(H, λ * vec(y), [λ * mean(ν)])
+    kernel = GaussianRFF(λ * vec(y), [λ * mean(ν)], H)
     ρ = 2.0^-20
     xhat = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
     error_rel_real = abs(xhat[] - xtrue) / xtrue
@@ -229,7 +229,7 @@ function test_complex_8()
     signalModels = [f]
     λ = 2.0^-1.5
     H = 2
-    kernel = GaussianRFF(H, [λ * mean(y)], [λ * mean(ν)])
+    kernel = GaussianRFF([λ * mean(y)], [λ * mean(ν)], H)
     ρ = 2.0^-20
     xhat = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
     error_rel_complex = abs(xhat[] - xtrue) / xtrue
@@ -253,7 +253,7 @@ function test_complex_9()
     signalModels = [f]
     λ = 2.0^-1.5
     H = 40
-    kernel = GaussianRFF(H, [λ * mean(y)], [λ * mean(ν)])
+    kernel = GaussianRFF([λ * mean(y)], [λ * mean(ν)], H)
     ρ = 2.0^-20
     xhat = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
 
@@ -265,7 +265,7 @@ end
 function test_complex_10()
 
     Random.seed!(0)
-    f = x -> complex(exp(-30 / x) + 1, exp(-30 / x) + 1)
+    f = x -> complex(exp(-30 / x) + 1, exp(-30 / x) - 1)
     f_abs = x -> abs(f(x))
     xtrue = 100
     y = f(xtrue)
@@ -275,8 +275,8 @@ function test_complex_10()
     noiseDist = Normal(0, 0.01)
     λ = 2.0^-1.5
     H = 40
-    kernel = GaussianRFF(H, [λ * mean(y)])
-    kernel_abs = GaussianRFF(H, λ * mean(y_abs))
+    kernel = GaussianRFF([λ * mean(y)], H)
+    kernel_abs = GaussianRFF(λ * mean(y_abs), H)
     ρ = 2.0^-20
     xhat = perk(y, T, xDists, noiseDist, f, kernel, ρ)
     xhat_abs = perk(y_abs, T, xDists, noiseDist, f_abs, kernel_abs, ρ)

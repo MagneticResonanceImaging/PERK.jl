@@ -56,12 +56,12 @@ function test_perk_3()
     signalModels = f
     λ = 2.0^-1.5
     H = 100
-    kernel = GaussianRFF(H, [λ * mean(y)])
+    kernel = GaussianRFF([λ * mean(y)], H)
     ρ = 2.0^-20
     xhat = perk(y, T, xDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
-    return isapprox(error_rel, 0.05920668255792492, atol = 1e-2)
+    return isapprox(error_rel, 0.0027435022102935136, atol = 1e-2)
 
 end
 
@@ -80,7 +80,7 @@ function test_perk_4()
     error_rel = zeros(length(xtrue))
     for i = 1:length(xtrue)
         y = f(xtrue[i])
-        kernel = GaussianRFF(H, [λ * mean(y)])
+        kernel = GaussianRFF([λ * mean(y)], H)
         xhat = perk(y, T, xDists, noiseDist, signalModels, kernel, ρ)
         error_rel[i] = abs(xhat[] - xtrue[i]) / xtrue[i]
     end
@@ -124,7 +124,7 @@ function test_perk_6()
     y = f(xtrue, ν) .+ zeros(D, N)
     T = 200
     H = 100
-    kernel = GaussianRFF(H, [vec(mean(y, dims = 2)); ν])
+    kernel = GaussianRFF([vec(mean(y, dims = 2)); ν], H)
     xDists = Uniform(10, 500)
     νDists = Uniform(30, 30.000000001)
     noiseDist = Normal(0, 0.01)
