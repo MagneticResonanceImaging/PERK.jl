@@ -90,14 +90,17 @@ Base.getproperty(data::ExactTrainingData, s::Symbol) = begin
 end
 
 """
-    RFFTrainingData(zm, xm, Czz, Cxz, CxzCzzinv) <: TrainingData
+    RFFTrainingData(z, zm, x, xm, Czz, Cxz, CxzCzzinv) <: TrainingData
 
 Create an object that contains the training data when using an approximation of
 the Gram matrix K using random Fourier features.
 
 # Properties
+- `z::AbstractMatrix{<:Real}`: Feature maps [H,T]
 - `zm::AbstractVector{<:Real}`: Mean of feature maps \\[H\\]
-- `xm::Union{<:Real,<:AbstractVector{<:Real}}`: Mean of latent parameters
+- `x::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Latent
+  parameters [L,T] or \\[T\\] (if L = 1)
+- `xm::Union{<:Ref{<:Real},<:AbstractVector{<:Real}}`: Mean of latent parameters
   \\[L\\] or scalar (if L = 1)
 - `Czz::AbstractMatrix{<:Real}`: Auto-covariance matrix of feature maps [H,H]
 - `Cxz::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`:
@@ -109,18 +112,40 @@ the Gram matrix K using random Fourier features.
 - `H::Integer`: Kernel approximation order
 """
 struct RFFTrainingData{
-    T1<:AbstractVector{<:Real},
-    T2<:Union{<:Real,<:AbstractVector{<:Real}},
-    T3<:AbstractMatrix{<:Real},
-    T4<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
-    T5<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}
+    T1<:AbstractMatrix{<:Real},
+    T2<:AbstractVector{<:Real},
+    T3<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    T4<:Union{<:Ref{<:Real},<:AbstractVector{<:Real}},
+    T5<:AbstractMatrix{<:Real},
+    T6<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    T7<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}
 } <: TrainingData
-    zm::T1
-    xm::T2
-    Czz::T3
-    Cxz::T4
-    CxzCzzinv::T5
+    z::T1
+    zm::T2
+    x::T3
+    xm::T4
+    Czz::T5
+    Cxz::T6
+    CxzCzzinv::T7
 end
+
+RFFTrainingData(::Type{<:AbstractVector}, eltype, T, H) =
+    RFFTrainingData(Matrix{eltype}(undef, H, T),
+                    Vector{eltype}(undef, H),
+                    Vector{eltype}(undef, T),
+                    Ref{eltype}(),
+                    Matrix{eltype}(undef, H, H),
+                    Vector{eltype}(undef, H),
+                    Vector{eltype}(undef, H))
+
+RFFTrainingData(::Type{<:AbstractMatrix}, eltype, L, T, H) =
+    RFFTrainingData(Matrix{eltype}(undef, H, T),
+                    Vector{eltype}(undef, H),
+                    Matrix{eltype}(undef, L, T),
+                    Vector{eltype}(undef, L),
+                    Matrix{eltype}(undef, H, H),
+                    Matrix{eltype}(undef, L, H),
+                    Matrix{eltype}(undef, L, H))
 
 Base.getproperty(data::RFFTrainingData, s::Symbol) = begin
     if s == :L

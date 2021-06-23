@@ -157,62 +157,114 @@ function krr_train!(
 end
 
 function krr_train(
-    xtrain::AbstractVector{<:Real}, # [T]
+    xtrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}, # [T] or [L,T]
     ytrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     kernel::RFFKernel,
     ρ::Real
 )
 
-    # Use random Fourier features to approximate the kernel
-    z = kernel(ytrain) # [H,T]
-
-    # Grab the number of training points
-    T = size(z, 2)
-
-    # Calculate sample means
-    xm = mean(xtrain) # scalar (L = 1)
-    zm = dropdims(mean(z, dims = 2), dims = 2) # [H]
-
-    # Calculate sample covariances
-    xtrain = xtrain .- xm # [T]
-    z = z .- zm # [H,T]
-    Czz = div0.(z * z', T) # [H,H]
-    Cxz = div0.(z * xtrain, T) # [H]
-
-    # Calculate the (regularized) inverse of Czz and multiply by Cxz
-    CxzCzzinv = transpose(Czz + ρ * I) \ Cxz # [H]
-
-    return RFFTrainingData(zm, xm, Czz, Cxz, CxzCzzinv)
+    T = promote_type(Float64, eltype(xtrain), eltype(ytrain))
+    Tx = typeof(xtrain)
+    H = length(kernel.phase)
+    if Tx <: AbstractVector
+        trainingdata = RFFTrainingData(Tx, T, length(xtrain), H)
+    else
+        trainingdata = RFFTrainingData(Tx, T, size(xtrain)..., H)
+    end
+    krr_train!(trainingdata, xtrain, ytrain, kernel, ρ)
+    return trainingdata
 
 end
 
-function krr_train(
-    xtrain::AbstractMatrix{<:Real}, # [L,T]
+function krr_train!(
+    trainingdata::RFFTrainingData,
+    xtrain::AbstractVector{<:Real}, # [T]
     ytrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
-    kernel::RFFKernel,
+    kernel!::RFFKernel,
     ρ::Real
 )
 
     # Use random Fourier features to approximate the kernel
-    z = kernel(ytrain) # [H,T]
+    kernel!(trainingdata.z, ytrain) # [H,T]
 
-    # Grab the number of training points
-    T = size(z, 2)
+    # Grab the number of training points and approximation order
+    (H, T) = size(trainingdata.z)
 
     # Calculate sample means
-    xm = dropdims(mean(xtrain, dims = 2), dims = 2) # [L]
-    zm = dropdims(mean(z, dims = 2), dims = 2) # [H]
+    trainingdata.xm[] = mean(xtrain) # scalar (L = 1)
+    for h = 1:H
+        trainingdata.zm[h] = mean(trainingdata.z[h,t] for t = 1:T)
+    end
 
     # Calculate sample covariances
-    xtrain = xtrain .- xm # [L,T]
-    z = z .- zm # [H,T]
-    Czz = div0.(z * z', T) # [H,H]
-    Cxz = div0.(xtrain * z', T) # [L,H]
+    trainingdata.x .= xtrain .- trainingdata.xm[] # [T]
+    for h = 1:H
+        tmp = trainingdata.zm[h]
+        for t = 1:T
+            trainingdata.z[h,t] -= tmp
+        end
+    end
+    mul!(trainingdata.Czz, trainingdata.z, trainingdata.z')
+    trainingdata.Czz .= div0.(trainingdata.Czz, T) # [H,H]
+    mul!(trainingdata.Cxz, trainingdata.z, trainingdata.x)
+    trainingdata.Cxz .= div0.(trainingdata.Cxz, T) # [H]
 
     # Calculate the (regularized) inverse of Czz and multiply by Cxz
-    CxzCzzinv = Cxz / (Czz + ρ * I) # [L,H]
+    F = lu(transpose(trainingdata.Czz + ρ * I))
+    copyto!(trainingdata.CxzCzzinv, trainingdata.Cxz)
+    ldiv!(F, trainingdata.CxzCzzinv) # [H]
 
-    return RFFTrainingData(zm, xm, Czz, Cxz, CxzCzzinv)
+    return nothing
+
+end
+
+function krr_train!(
+    trainingdata::RFFTrainingData,
+    xtrain::AbstractMatrix{<:Real}, # [L,T]
+    ytrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    kernel!::RFFKernel,
+    ρ::Real
+)
+
+    # Use random Fourier features to approximate the kernel
+    kernel!(trainingdata.z, ytrain) # [H,T]
+
+    # Grab the number of training points and approximation order
+    (H, T) = size(trainingdata.z)
+
+    # Grab the number of latent parameters
+    L = size(xtrain, 1)
+
+    # Calculate sample means
+    for l = 1:L
+        m = mean(xtrain[l,t] for t = 1:T)
+        trainingdata.xm[l] = m
+        for t = 1:T
+            trainingdata.x[l,t] = xtrain[l,t] - m
+        end
+    end
+    for h = 1:H
+        trainingdata.zm[h] = mean(trainingdata.z[h,t] for t = 1:T)
+    end
+
+    # Calculate sample covariances
+    for h = 1:H
+        tmp = trainingdata.zm[h]
+        for t = 1:T
+            trainingdata.z[h,t] -= tmp
+        end
+    end
+    mul!(trainingdata.Czz, trainingdata.z, trainingdata.z')
+    trainingdata.Czz .= div0.(trainingdata.Czz, T) # [H,H]
+    mul!(trainingdata.Cxz, trainingdata.x, trainingdata.z')
+    trainingdata.Cxz .= div0.(trainingdata.Cxz, T) # [L,H]
+
+    # Calculate the (regularized) inverse of Czz and multiply by Cxz
+    F = lu(trainingdata.Czz + ρ * I)
+    copyto!(trainingdata.CxzCzzinv, trainingdata.Cxz)
+    rdiv!(trainingdata.CxzCzzinv, F) # [L,H]
+
+    return nothing
 
 end
 
@@ -266,8 +318,8 @@ function krr(
     z = z .- trainingdata.zm # [H,N] or [H]
 
     # Check if L = 1
-    if trainingdata isa RFFTrainingData{<:Any,<:Any,<:Any,<:AbstractVector,<:Any}
-        xhat = trainingdata.xm .+ transpose(z) * trainingdata.CxzCzzinv # [N] or scalar
+    if trainingdata isa RFFTrainingData{<:Any,<:Any,<:AbstractVector,<:Any,<:Any,<:Any,<:Any}
+        xhat = trainingdata.xm[] .+ transpose(z) * trainingdata.CxzCzzinv # [N] or scalar
     else
         xhat = trainingdata.xm .+ trainingdata.CxzCzzinv * z # [L,N] or [L]
     end

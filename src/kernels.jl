@@ -178,8 +178,7 @@ Create a Gaussian kernel function.
 # Properties
 - `Λ::Union{<:Real,AbstractVector{<:Real}}`: Length scales \\[Q\\] or scalar
   (if Q = 1)
-- `workspace::Union{<:AbstractVector{Float64},Nothing}`: Workspace for computing
-  the Gaussian kernel; `nothing` if Q = 1
+- `workspace::Vector{<:Real}`: Workspace for computing the Gaussian kernel
 
 # Note
 - Q is the number of features
@@ -434,6 +433,7 @@ Create an approximate (via random Fourier features) Gaussian kernel function.
 - `freq::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}} = randn(k.H, Q)`:
   Scaled random frequency values [H,Q] or \\[H\\] (if Q = 1)
 - `phase::AbstractVector{<:Real} = rand(k.H)`: Random phase values \\[H\\]
+- `workspace::Vector{<:Real}`: Workspace for computing random Fourier features
 
 ## Note
 - The `freq` input to `GaussianRFF` is *unscaled*, but is then scaled so that
@@ -441,10 +441,11 @@ Create an approximate (via random Fourier features) Gaussian kernel function.
 - H is the approximation order
 - Q is the number of features
 """
-struct GaussianRFF{T1<:Union{<:Real,<:AbstractVector{<:Real}},T2<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},T3<:AbstractVector{<:Real}} <: RFFKernel
+struct GaussianRFF{T1<:Union{<:Real,<:AbstractVector{<:Real}},T2<:Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},T3<:AbstractVector{<:Real},W<:Real} <: RFFKernel
     Λ::T1
     freq::T2
     phase::T3
+    workspace::Vector{W}
 
     function GaussianRFF(
         Λ::Union{<:Real,<:AbstractVector{<:Real}},
@@ -463,7 +464,11 @@ struct GaussianRFF{T1<:Union{<:Real,<:AbstractVector{<:Real}},T2<:Union{<:Abstra
         # Scale freq by the square root of the inverse covariance matrix from
         # which to draw the Gaussian samples
         freq = freq * sqrtΣ
-        new{typeof(Λ),typeof(freq),typeof(phase)}(Λ, freq, phase)
+        T = eltype(Λ)
+        # workspace must be vector because number of feature vectors is unknown
+        # when creating GaussianRFF object
+        workspace = Vector{T}(undef, length(phase))
+        new{typeof(Λ),typeof(freq),typeof(phase),T}(Λ, freq, phase, workspace)
 
     end
 end
@@ -574,6 +579,15 @@ function (k::GaussianRFF)(
 
 end
 
+function (k!::GaussianRFF)(
+    out::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
+    q::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}
+)
+
+    rffmap!(out, q, k!.freq, k!.phase, k!.workspace)
+
+end
+
 """
     rffmap(q, freq, phase)
 
@@ -637,5 +651,71 @@ function rffmap(
 )
 
     return sqrt(div0(2, length(phase))) .* cos.(2π .* (freq .* q .+ phase))
+
+end
+
+function rffmap!(
+    out::AbstractMatrix{<:Real},
+    q::AbstractMatrix{<:Real},
+    freq::AbstractMatrix{<:Real},
+    phase::AbstractVector{<:Real},
+    workspace::AbstractVector{<:Real}
+)
+
+    s = sqrt(div0(2, length(phase)))
+    for n = 1:size(q, 2)
+        @views mul!(workspace, freq, q[:,n])
+        out[:,n] = s .* cos.(2π .* (workspace .+ phase))
+    end
+
+    return nothing
+
+end
+
+function rffmap!(
+    out::AbstractMatrix{<:Real},
+    q::AbstractMatrix{<:Real},
+    freq::AbstractVector{<:Real},
+    phase::AbstractVector{<:Real},
+    workspace::AbstractVector{<:Real}
+)
+
+    size(q, 1) == 1 ||
+        throw(DimensionMismatch("freq has feature dimension equal to 1, but " *
+                                "q has a larger feature dimension"))
+
+    return rffmap!(out, vec(q), freq, phase, workspace)
+
+end
+
+function rffmap!(
+    out::AbstractMatrix{<:Real},
+    q::AbstractVector{<:Real},
+    freq::AbstractVector{<:Real},
+    phase::AbstractVector{<:Real},
+    ::AbstractVector{<:Real}
+)
+
+    s = sqrt(div0(2, length(phase)))
+    for n = 1:length(q)
+        out[:,n] = s .* cos.(2π .* (freq .* q[n] .+ phase))
+    end
+
+    return nothing
+
+end
+
+function rffmap!(
+    out::AbstractVector{<:Real},
+    q::Real,
+    freq::AbstractVector{<:Real},
+    phase::AbstractVector{<:Real},
+    ::AbstractVector{<:Real}
+)
+
+    s = sqrt(div0(2, length(phase)))
+    out .= s .* cos.(2π .* (freq .* q .+ phase))
+
+    return nothing
 
 end
