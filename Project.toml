@@ -1,7 +1,7 @@
 name = "PERK"
 uuid = "85f1910e-5d62-11e9-1bce-2b30a05932d4"
 authors = ["Steven Whitaker <stwhit@umich.edu>"]
-version = "0.3.1"
+version = "0.3.2"
 
 [deps]
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
