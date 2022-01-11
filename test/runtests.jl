@@ -1,4 +1,5 @@
 using Distributions
+using ForwardDiff
 using LinearAlgebra
 using PERK
 using Random
@@ -11,4 +12,5 @@ using Test
     include("estimation.jl")
     include("complex.jl")
     include("holdout.jl")
+    include("forwarddiff.jl")
 end
