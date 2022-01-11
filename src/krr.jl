@@ -131,7 +131,7 @@ function _krr_train(
     # Calculate sample covariances
     xtrain = xtrain .- xm # [T]
     z = z .- zm # [H,T]
-    Czz = div0.(z * z', T) # [H,H]
+    Czz = div0.(A_mul_A′(z), T) # [H,H]
     Cxz = div0.(z * xtrain, T) # [H]
 
     # Calculate the (regularized) inverse of Czz and multiply by Cxz
@@ -159,13 +159,28 @@ function _krr_train(
     # Calculate sample covariances
     xtrain = xtrain .- xm # [L,T]
     z = z .- zm # [H,T]
-    Czz = div0.(z * z', T) # [H,H]
+    Czz = div0.(A_mul_A′(z), T) # [H,H]
     Cxz = div0.(xtrain * z', T) # [L,H]
 
     # Calculate the (regularized) inverse of Czz and multiply by Cxz
     CxzCzzinv = Cxz / (Czz + ρ * I) # [L,H]
 
     return RFFTrainingData(freq, phase, zm, xm, Czz, Cxz, CxzCzzinv)
+
+end
+
+A_mul_A′(A) = A * A'
+
+# See https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf
+function A_mul_A′(D::AbstractMatrix{<:ForwardDiff.Dual{T}}) where T
+
+    A = ForwardDiff.value.(D)
+    AA′ = A_mul_A′(A)
+    Δ = ForwardDiff.partials.(D)
+    # dAA′ = Δ * A' + A * Δ'
+    ΔA′ = Δ * A'
+    dAA′ = [ΔA′[i,j] + conj(ΔA′[j,i]) for i in axes(ΔA′, 1), j in axes(ΔA′, 2)]
+    return ForwardDiff.Dual{T}.(AA′, dAA′)
 
 end
 
