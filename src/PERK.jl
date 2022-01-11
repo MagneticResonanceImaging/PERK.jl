@@ -13,6 +13,7 @@ Module implementing parameter estimation via regression with kernels (PERK).
 """
 module PERK
 
+import ForwardDiff # ForwardDiff.Dual, ForwardDiff.partials, ForwardDiff.value
 using LinearAlgebra: I, Diagonal, norm
 using Statistics: mean
 
