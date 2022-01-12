@@ -1,7 +1,12 @@
 # PERK.jl
 
+https://github.com/StevenWhitaker/PERK.jl
+
 [![action status](https://github.com/StevenWhitaker/PERK.jl/actions/workflows/runtests.yml/badge.svg)](https://github.com/StevenWhitaker/PERK.jl/actions)
 [![codecov](https://codecov.io/gh/StevenWhitaker/PERK.jl/branch/main/graph/badge.svg?token=qnZeOeEuBM)](https://codecov.io/gh/StevenWhitaker/PERK.jl)
+[![license][license-img]][license-url]
+[![docs stable][docs-stable-img]][docs-stable-url]
+[![docs dev][docs-dev-img]][docs-dev-url]
 
 This package implements PERK, a parameter estimation technique presented in
 [G. Nataraj, J.-F. Nielsen, C. Scott, and J. A. Fessler. Dictionary-free MRI PERK: Parameter estimation via regression with kernels. IEEE Trans. Med. Imag., 37(9):2103-14, September 2018](https://ieeexplore.ieee.org/document/8320384/).
@@ -41,3 +46,12 @@ Calling `PERK.krr_train` returns a `TrainingData` object
 that can be passed to `PERK.krr`.
 As with `perk`,
 both `PERK.krr_train` and `PERK.krr` must be passed a `Kernel` object.
+
+
+<!-- URLs -->
+[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-stable-url]: https://StevenWhitaker.github.io/PERK.jl/stable
+[docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
+[docs-dev-url]: https://StevenWhitaker.github.io/PERK.jl/dev
+[license-img]: http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat
+[license-url]: LICENSE
