@@ -1,6 +1,14 @@
+using Test: @test, @testset
+using Distributions: Uniform, Normal
+using Random: seed!
+using Statistics: mean
+using LinearAlgebra: norm
+using PERK: perk, GaussianKernel, EuclideanKernel, GaussianRFF
+
+
 function test_perk_1()
 
-    Random.seed!(0)
+    seed!(0)
     f = x -> exp(-30 / x)
     xtrue = 100
     y = f(xtrue)
@@ -14,13 +22,14 @@ function test_perk_1()
     xhat = perk(y, T, xDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat - xtrue) / xtrue
-    return isapprox(error_rel, 0.02498437176144705, atol = 1e-6)
+    return isapprox(error_rel, 0.01624694675232206, atol = 1e-6)
 
 end
 
+
 function test_perk_2()
 
-    Random.seed!(0)
+    seed!(0)
     f = x -> exp(-30 / x)
     xtrue = 20:490
     N = 1
@@ -39,13 +48,14 @@ function test_perk_2()
     end
 
     error_rel_avg = sum(error_rel) / length(error_rel)
-    return isapprox(error_rel_avg, 0.045074705837992585, atol = 1e-6)
+    return isapprox(error_rel_avg, 0.045807020638975085, atol = 1e-6)
 
 end
 
+
 function test_perk_3()
 
-    Random.seed!(0)
+    seed!(0)
     f = x -> exp(-30 / x)
     xtrue = 100
     N = 1
@@ -65,9 +75,10 @@ function test_perk_3()
 
 end
 
+
 function test_perk_4()
 
-    Random.seed!(0)
+    seed!(0)
     f = x -> exp(-30 / x)
     xtrue = 20:490
     T = 200
@@ -90,9 +101,10 @@ function test_perk_4()
 
 end
 
+
 function test_perk_5()
 
-    Random.seed!(0)
+    seed!(0)
     f = (x, ν) -> exp(-ν / x)
     xtrue = 100
     ν = 30
@@ -109,13 +121,15 @@ function test_perk_5()
     xhat = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
-    return isapprox(error_rel, 0.011599576402842331, atol = 1e-6)
+#   return isapprox(error_rel, 0.011599576402842331, atol = 1e-6)
+    return isapprox(error_rel, 0.02690989089318805, atol = 1e-6)
 
 end
 
+
 function test_perk_6()
 
-    Random.seed!(0)
+    seed!(0)
     f = (x, ν) -> [x + ν, exp(-ν / x)]
     xtrue = 100
     ν = 30
@@ -137,9 +151,10 @@ function test_perk_6()
 
 end
 
+
 function test_perk_7()
 
-    Random.seed!(0)
+    seed!(0)
     f = (x, ν) -> ν * log(x)
     xtrue = 10
     ν = ones(1, 1)
@@ -154,13 +169,14 @@ function test_perk_7()
     xhat = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
-    return isapprox(error_rel, 0.0838482074602517, atol = 1e-6)
+    return isapprox(error_rel, 0.08400825890481763, atol = 1e-6)
 
 end
 
+
 function test_perk_8()
 
-    Random.seed!(0)
+    seed!(0)
     f = (x, ν) -> ν * log(x)
     xtrue = 10
     ν = 1
@@ -175,13 +191,14 @@ function test_perk_8()
     xhat = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
-    return isapprox(error_rel, 0.0838482074602517, atol = 1e-6)
+    return isapprox(error_rel, 0.08400825890481763, atol = 1e-6)
 
 end
 
+
 function test_perk_9()
 
-    Random.seed!(0)
+    seed!(0)
     f = x -> x^2
     xtrue = 4
     y = fill(f(xtrue), 1, 1)
@@ -194,13 +211,14 @@ function test_perk_9()
     xhat = perk(y, T, xDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
-    return isapprox(error_rel, 0.0904567549522286, atol = 1e-6)
+    return isapprox(error_rel, 0.0781608342601472, atol = 1e-6)
 
 end
 
+
 function test_perk_10()
 
-    Random.seed!(0)
+    seed!(0)
     f = (x, ν) -> x * ν
     xtrue = 5.5
     N = 100
@@ -220,9 +238,10 @@ function test_perk_10()
 
 end
 
+
 function test_perk_11()
 
-    Random.seed!(0)
+    seed!(0)
     f = (x, ν) -> x * ν
     xtrue = 5.5
     N = 100
@@ -242,9 +261,10 @@ function test_perk_11()
 
 end
 
+
 function test_perk_12()
 
-    Random.seed!(0)
+    seed!(0)
     f = (x, ν) -> x * ν
     xtrue = 5.5
     N = 100
@@ -263,6 +283,7 @@ function test_perk_12()
     return isapprox(error_rel, 0.04660298300648695, atol = 1e-2)
 
 end
+
 
 @testset "PERK" begin
 
