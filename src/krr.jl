@@ -1,3 +1,10 @@
+export krr_train, krr
+
+#using PERK: RFFTrainingData, RFFKernel
+#using PERK: ExactTrainingData, ExactKernel
+using ForwardDiff: ForwardDiff
+
+
 """
     krr_train(xtrain, ytrain, kernel, ρ, [f, phase])
 
