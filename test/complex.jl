@@ -49,6 +49,7 @@ function test_complex_2()
     xhat = perk(rng, y, T, xDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
+    println("test_complex_2: error_rel = ", error_rel)
     return error_rel ≈ 0.04464689602051635
 
 end

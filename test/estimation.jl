@@ -21,6 +21,7 @@ function test_perk_1()
     xhat = perk(rng, y, T, xDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat - xtrue) / xtrue
+    println("test_perk_1: error_rel = ", error_rel)
     return error_rel ≈ 0.042677934398487306
 
 end
@@ -210,6 +211,7 @@ function test_perk_9()
     xhat = perk(rng, y, T, xDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
+    println("test_perk_9: error_rel = ", error_rel)
     return isapprox(error_rel, 0.09566274665119057, atol = 1e-8)
 
 end
