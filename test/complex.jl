@@ -32,9 +32,10 @@ function test_complex_1()
 
 end
 
+
 function test_complex_2()
 
-    Random.seed!(0)
+    rng = StableRNG(0)
     f = x -> complex(exp(-30 / x), exp(-30 / x))
     xtrue = 100
     y = f(xtrue)
@@ -45,12 +46,13 @@ function test_complex_2()
     λ = 2.0^-1.5
     kernel = GaussianKernel([λ * mean(y)])
     ρ = 2.0^-20
-    xhat = perk(y, T, xDists, noiseDist, signalModels, kernel, ρ)
+    xhat = perk(rng, y, T, xDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
-    return isapprox(error_rel, 0.05211190543523628, atol = 1e-6)
+    return error_rel ≈ 0.04464689602051635
 
 end
+
 
 function test_complex_3()
 
@@ -92,9 +94,10 @@ function test_complex_3()
 
 end
 
+
 function test_complex_4()
 
-    Random.seed!(0)
+    rng = StableRNG(0)
     f = (x, ν) -> complex(exp(-ν / x), exp(-ν / x))
     xtrue = 100
     ν = 30
@@ -108,38 +111,15 @@ function test_complex_4()
     λ = 2.0^-1.5
     kernel = GaussianKernel([λ * mean(y)], [λ * mean(ν)])
     ρ = 2.0^-20
-    xhat = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
+    xhat = perk(rng, y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
-    return isapprox(error_rel, 0.03526687067013938, atol = 1e-6)
+    return error_rel ≈ 0.05111009427971681
 
 end
+
 
 function test_complex_5()
-
-    Random.seed!(0)
-    f = x -> complex(exp(-30 / x) + 1, exp(-30 / x) + 1)
-    f_abs = x -> abs(f(x))
-    xtrue = 100
-    y = f(xtrue)
-    y_abs = f_abs(xtrue)
-    T = 200
-    xDists = Uniform(10, 500)
-    noiseDist = Normal(0, 0.01)
-    λ = 2.0^-1.5
-    kernel = GaussianKernel([λ * mean(y)])
-    kernel_abs = GaussianKernel(λ * mean(y_abs))
-    ρ = 2.0^-20
-    xhat = perk(y, T, xDists, noiseDist, f, kernel, ρ)
-    xhat_abs = perk(y_abs, T, xDists, noiseDist, f_abs, kernel_abs, ρ)
-
-    error_rel = abs(xhat[] - xtrue) / xtrue
-    error_rel_abs = abs(xhat_abs[] - xtrue) / xtrue
-    return error_rel < error_rel_abs
-
-end
-
-function test_complex_6()
 
     Random.seed!(0)
     f = x -> [exp(-30 / x), exp(-30 / x)]
@@ -175,9 +155,10 @@ function test_complex_6()
 
 end
 
-function test_complex_7()
 
-    Random.seed!(0)
+function test_complex_6()
+
+    rng = StableRNG(0)
     f = x -> complex(exp(-30 / x), exp(-30 / x))
     xtrue = 100
     y = f(xtrue)
@@ -189,14 +170,15 @@ function test_complex_7()
     H = 40
     kernel = GaussianRFF(H, [λ * mean(y)])
     ρ = 2.0^-20
-    xhat = perk(y, T, xDists, noiseDist, signalModels, kernel, ρ)
+    xhat = perk(rng, y, T, xDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
-    return isapprox(error_rel, 0.01699497197550329, atol = 1e-2)
+    return error_rel ≈ 0.02231978386441426
 
 end
 
-function test_complex_8()
+
+function test_complex_7()
 
     Random.seed!(0)
     f = (x, ν) -> [exp(-ν / x), exp(-ν / x)]
@@ -238,9 +220,10 @@ function test_complex_8()
 
 end
 
-function test_complex_9()
 
-    Random.seed!(0)
+function test_complex_8()
+
+    rng = StableRNG(0)
     f = (x, ν) -> complex(exp(-ν / x), exp(-ν / x))
     xtrue = 100
     ν = 30
@@ -255,37 +238,13 @@ function test_complex_9()
     H = 40
     kernel = GaussianRFF(H, [λ * mean(y)], [λ * mean(ν)])
     ρ = 2.0^-20
-    xhat = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
+    xhat = perk(rng, y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
-    return isapprox(error_rel, 0.0346180252991536, atol = 1e-2)
+    return error_rel ≈ 0.06272802910855091
 
 end
 
-function test_complex_10()
-
-    Random.seed!(0)
-    f = x -> complex(exp(-30 / x) + 1, exp(-30 / x) + 1)
-    f_abs = x -> abs(f(x))
-    xtrue = 100
-    y = f(xtrue)
-    y_abs = f_abs(xtrue)
-    T = 200
-    xDists = Uniform(10, 500)
-    noiseDist = Normal(0, 0.01)
-    λ = 2.0^-1.5
-    H = 40
-    kernel = GaussianRFF(H, [λ * mean(y)])
-    kernel_abs = GaussianRFF(H, λ * mean(y_abs))
-    ρ = 2.0^-20
-    xhat = perk(y, T, xDists, noiseDist, f, kernel, ρ)
-    xhat_abs = perk(y_abs, T, xDists, noiseDist, f_abs, kernel_abs, ρ)
-
-    error_rel = abs(xhat[] - xtrue) / xtrue
-    error_rel_abs = abs(xhat_abs[] - xtrue) / xtrue
-    return error_rel < error_rel_abs
-
-end
 
 @testset "Complex PERK" begin
 
@@ -297,7 +256,5 @@ end
     @test test_complex_6()
     @test test_complex_7()
     @test test_complex_8()
-    @test test_complex_9()
-    @test test_complex_10()
 
 end

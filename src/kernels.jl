@@ -348,11 +348,14 @@ function GaussianRFF(
 end
 
 """
-    (k::GaussianRFF)(q, [f, phase])
+    (k::GaussianRFF)([rng], q)
+    (k::GaussianRFF)(q, f, phase)
 
 Evaluate the approximate Gaussian kernel.
 
 # Arguments
+- `rng::AbstractRNG = Random.GLOBAL_RNG`: Random number generator to use to
+  generate `f` and `phase`
 - `q::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Kernel
   input [Q,N] or \\[N\\] (if Q = 1) or scalar (if Q = N = 1)
 - `f::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}} = randn(k.H, Q)`:
@@ -372,6 +375,7 @@ Evaluate the approximate Gaussian kernel.
 - `phase::AbstractVector{<:Real}`: Random phase values \\[H\\]
 """
 function (k::GaussianRFF)(
+    rng::AbstractRNG,
     q::AbstractMatrix{<:Real}
 )
 
@@ -379,22 +383,31 @@ function (k::GaussianRFF)(
     Q = size(q, 1)
 
     # Generate random phase and unscaled frequency values
-    f = randn(k.H, Q)
-    phase = rand(k.H)
+    f = randn(rng, k.H, Q)
+    phase = rand(rng, k.H)
 
     return k(q, f, phase)
 
 end
 
 function (k::GaussianRFF)(
+    rng::AbstractRNG,
     q::Union{<:Real,<:AbstractVector{<:Real}}
 )
 
     # Generate random phase and unscaled frequency values
-    f = randn(k.H)
-    phase = rand(k.H)
+    f = randn(rng, k.H)
+    phase = rand(rng, k.H)
 
     return k(q, f, phase)
+
+end
+
+function (k::GaussianRFF)(
+    q
+)
+
+    return k(Random.GLOBAL_RNG, q)
 
 end
 

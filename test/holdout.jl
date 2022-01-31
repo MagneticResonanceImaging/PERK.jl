@@ -1,6 +1,6 @@
 function test_holdout_1()
 
-    Random.seed!(0)
+    rng = StableRNG(0)
     N = 10
     T = 200
     λvals = [1, 2]
@@ -13,7 +13,7 @@ function test_holdout_1()
     noiseDist = Normal(0, 0.01)
     signalModels = [(x, ν) -> exp(-ν / x)]
     kernelgenerator = Λ -> GaussianKernel(Λ)
-    (λ, ρ, Ψ) = PERK.holdout(N, T, λvals, ρvals, weights, xDistsTest,
+    (λ, ρ, Ψ) = PERK.holdout(rng, N, T, λvals, ρvals, weights, xDistsTest,
                              νDistsTest, xDistsTrain, νDistsTrain, noiseDist,
                              signalModels, kernelgenerator, showprogress = false)
 
@@ -23,7 +23,7 @@ end
 
 function test_holdout_2()
 
-    Random.seed!(0)
+    rng = StableRNG(0)
     N = 10
     T = 200
     λvals = [1, 2]
@@ -34,7 +34,7 @@ function test_holdout_2()
     noiseDist = Normal(0, 0.01)
     signalModels = [x -> exp(-30 / x)]
     kernelgenerator = Λ -> GaussianKernel(Λ)
-    (λ, ρ, Ψ) = PERK.holdout(N, T, λvals, ρvals, weights, xDistsTest,
+    (λ, ρ, Ψ) = PERK.holdout(rng, N, T, λvals, ρvals, weights, xDistsTest,
                              xDistsTrain, noiseDist, signalModels,
                              kernelgenerator, showprogress = false)
 
@@ -44,7 +44,7 @@ end
 
 function test_holdout_3()
 
-    Random.seed!(0)
+    rng = StableRNG(0)
     N = 10
     T = 200
     λvals = [1, 2]
@@ -56,7 +56,7 @@ function test_holdout_3()
     noiseDist = Normal(0, 0.01)
     signalModels = [(x, ν) -> exp(-ν / x)]
     kernelgenerator = Λ -> GaussianKernel(Λ)
-    (λ, ρ, Ψ) = PERK.holdout(N, T, λvals, ρvals, xDistsTest,
+    (λ, ρ, Ψ) = PERK.holdout(rng, N, T, λvals, ρvals, xDistsTest,
                              νDistsTest, xDistsTrain, νDistsTrain, noiseDist,
                              signalModels, kernelgenerator, showprogress = false)
 
@@ -66,7 +66,7 @@ end
 
 function test_holdout_4()
 
-    Random.seed!(0)
+    rng = StableRNG(0)
     N = 10
     T = 200
     λvals = [1, 2]
@@ -76,7 +76,7 @@ function test_holdout_4()
     noiseDist = Normal(0, 0.01)
     signalModels = x -> [exp(-30 / x), x]
     kernelgenerator = Λ -> GaussianKernel(Λ)
-    (λ, ρ, Ψ) = PERK.holdout(N, T, λvals, ρvals, xDistsTest,
+    (λ, ρ, Ψ) = PERK.holdout(rng, N, T, λvals, ρvals, xDistsTest,
                              xDistsTrain, noiseDist, signalModels,
                              kernelgenerator, showprogress = false)
 

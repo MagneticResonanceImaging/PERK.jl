@@ -3,6 +3,7 @@ using ForwardDiff
 using LinearAlgebra
 using PERK
 using Random
+using StableRNGs
 using Statistics
 using Test
 

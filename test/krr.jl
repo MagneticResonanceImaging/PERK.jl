@@ -100,7 +100,7 @@ end
 # Other tests
 function test_krr_5()
 
-    Random.seed!(0)
+    rng = StableRNG(0)
     f = x -> exp(-30 / x)
     xtrue = 100
     y = f(xtrue)
@@ -112,13 +112,14 @@ function test_krr_5()
     H = 100
     kernel = GaussianRFF(H, λ * mean(y))
     ρ = 2.0^-20
-    (ytrain, xtrain) = generatenoisydata(T, xDists, noiseDist, signalModels)
-    trainData = PERK.krr_train(xtrain, ytrain, kernel, ρ, randn(H), rand(H))
+    (ytrain, xtrain) = generatenoisydata(rng, T, xDists, noiseDist, signalModels)
+    trainData = PERK.krr_train(xtrain, ytrain, kernel, ρ, randn(rng, H),
+        rand(rng, H))
     xhat = PERK.krr(y, trainData, kernel)
 
     error_rel = abs(xhat - xtrue) / xtrue
     # For line coverage, access Q, L, and H in trainData as well
-    return isapprox(error_rel, 0.05920668255792009, atol = 1e-2) &&
+    return error_rel ≈ 0.07054474887124201 &&
            trainData.Q == length(y) &&
            trainData.L == length(xtrue) &&
            trainData.H == H
@@ -127,7 +128,7 @@ end
 
 function test_krr_6()
 
-    Random.seed!(0)
+    rng = StableRNG(0)
     f = x -> exp(-30 / x)
     xtrue = 100
     y = f(xtrue)
@@ -139,12 +140,13 @@ function test_krr_6()
     H = 100
     kernel = GaussianRFF(H, λ * mean(y))
     ρ = 2.0^-20
-    (ytrain, xtrain) = generatenoisydata(T, xDists, noiseDist, signalModels)
-    trainData = PERK.krr_train(xtrain, ytrain, kernel, ρ, randn(H,1), rand(H))
+    (ytrain, xtrain) = generatenoisydata(rng, T, xDists, noiseDist, signalModels)
+    trainData = PERK.krr_train(xtrain, ytrain, kernel, ρ, randn(rng, H, 1),
+        rand(rng, H))
     xhat = PERK.krr(y, trainData, kernel)
 
     error_rel = abs(xhat - xtrue) / xtrue
-    return isapprox(error_rel, 0.05920668255792009, atol = 1e-2)
+    return error_rel ≈ 0.07054474887124201
 
 end
 
