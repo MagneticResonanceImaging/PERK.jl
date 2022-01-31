@@ -1,5 +1,8 @@
 execute = isempty(ARGS) || ARGS[1] == "run"
 
+#using Pkg
+#Pkg.add(url="https://github.com/StevenWhitaker/PERK.jl")
+
 using PERK
 using Documenter
 using Literate
@@ -70,6 +73,4 @@ if isci
         forcepush = true,
 #       push_preview = true,
     )
-else
-    @warn "may need to: rm -r src/generated/"
 end
