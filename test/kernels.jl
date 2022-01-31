@@ -41,11 +41,22 @@ function test_GaussianKernel_2()
     
 end
 
+# For code coverage
+function test_GaussianRFF_1()
+
+    Λ = 2
+    H = 2
+    k = GaussianRFF(Λ, H)
+    return k(1) isa Tuple
+
+end
+
 @testset "Kernels" begin
 
     @test test_EuclideanKernel_1()
     @test test_EuclideanKernel_2()
     @test test_GaussianKernel_1()
     @test test_GaussianKernel_2()
+    @test test_GaussianRFF_1()
 
 end
