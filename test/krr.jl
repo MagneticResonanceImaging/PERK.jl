@@ -117,9 +117,20 @@ function test_krr_5()
         rand(rng, H))
     xhat = PERK.krr(y, trainData, kernel)
 
+    # For code coverage, call
+    # - krr_train without rng and freq and phase
+    # - generatenoisydata without rng
+    # - addnoise! without rng
+    # - train without rng
+    # (results not used)
+    PERK.krr_train(xtrain, ytrain, kernel, ρ)
+    generatenoisydata(T, xDists, noiseDist, signalModels)
+    PERK.addnoise!([y], noiseDist)
+    PERK.train(T, xDists, noiseDist, signalModels, kernel, ρ)
+
     error_rel = abs(xhat - xtrue) / xtrue
     # For line coverage, access Q, L, and H in trainData as well
-    return error_rel ≈ 0.07054474887124201 &&
+    return isapprox(error_rel, 0.07054474887124201, atol = 1e-7) &&
            trainData.Q == length(y) &&
            trainData.L == length(xtrue) &&
            trainData.H == H
@@ -146,7 +157,7 @@ function test_krr_6()
     xhat = PERK.krr(y, trainData, kernel)
 
     error_rel = abs(xhat - xtrue) / xtrue
-    return error_rel ≈ 0.07054474887124201
+    return isapprox(error_rel, 0.07054474887124201, atol = 1e-7)
 
 end
 

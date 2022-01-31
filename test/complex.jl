@@ -49,7 +49,7 @@ function test_complex_2()
     xhat = perk(rng, y, T, xDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
-    return error_rel ≈ 0.04464689602051635
+    return isapprox(error_rel, 0.04464689602051635, atol = 1e-7)
 
 end
 
@@ -114,7 +114,7 @@ function test_complex_4()
     xhat = perk(rng, y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
-    return error_rel ≈ 0.05111009427971681
+    return isapprox(error_rel, 0.05111009427971681, atol = 1e-7)
 
 end
 
@@ -173,7 +173,7 @@ function test_complex_6()
     xhat = perk(rng, y, T, xDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
-    return error_rel ≈ 0.02231978386441426
+    return isapprox(error_rel, 0.02231978386441426, atol = 1e-7)
 
 end
 
@@ -241,7 +241,7 @@ function test_complex_8()
     xhat = perk(rng, y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
-    return error_rel ≈ 0.06272802910855091
+    return isapprox(error_rel, 0.06272802910855091, atol = 1e-7)
 
 end
 
