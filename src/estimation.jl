@@ -1,10 +1,11 @@
 """
-    perk(y, T, xDists, noiseDist, signalModels, kernel, ρ)
-    perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
+    perk([rng], y, T, xDists, noiseDist, signalModels, kernel, ρ)
+    perk([rng], y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
 
 Train PERK and then estimate latent parameters.
 
 # Arguments
+- `rng::AbstractRNG = Random.GLOBAL_RNG`: Random number generator to use
 - `y::Union{<:Number,<:AbstractVector{<:Number},<:AbstractMatrix{<:Number}}`:
   Test data points [D,N] or \\[N\\] (if D = 1) or scalar (if D = N = 1)
 - `ν::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Known
@@ -41,6 +42,7 @@ Train PERK and then estimate latent parameters.
   or scalar (if L = N = 1)
 """
 function perk(
+    rng::AbstractRNG,
     y::Union{<:Number,<:AbstractVector{<:Number},<:AbstractMatrix{<:Number}},
     T::Integer,
     xDists,
@@ -50,13 +52,14 @@ function perk(
     ρ::Real
 )
 
-    trainData = train(T, xDists, noiseDist, signalModels, kernel, ρ)
+    trainData = train(rng, T, xDists, noiseDist, signalModels, kernel, ρ)
 
     return perk(y, trainData, kernel)
 
 end
 
 function perk(
+    rng::AbstractRNG,
     y::Union{<:Number,<:AbstractVector{<:Number},<:AbstractMatrix{<:Number}},
     ν::Union{<:Real,<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     T::Integer,
@@ -68,9 +71,18 @@ function perk(
     ρ::Real
 )
 
-    trainData = train(T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
+    trainData = train(rng, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
 
     return perk(y, ν, trainData, kernel)
+
+end
+
+function perk(
+    y::Union{<:Number,<:AbstractVector{<:Number},<:AbstractMatrix{<:Number}},
+    args...
+)
+
+    return perk(Random.GLOBAL_RNG, y, args...)
 
 end
 

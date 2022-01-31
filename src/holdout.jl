@@ -1,12 +1,14 @@
 """
-    holdout(N, T, λvals, ρvals, [weights,] xDistsTest, xDistsTrain, noiseDist,
-            signalModels, kernelgenerator; showprogress)
-    holdout(N, T, λvals, ρvals, [weights,] xDistsTest, νDistsTest, xDistsTrain,
-            νDistsTrain, noiseDist, signalModels, kernelgenerator; showprogress)
+    holdout([rng], N, T, λvals, ρvals, [weights,] xDistsTest, xDistsTrain,
+            noiseDist, signalModels, kernelgenerator; showprogress)
+    holdout([rng], N, T, λvals, ρvals, [weights,] xDistsTest, νDistsTest,
+            xDistsTrain, νDistsTrain, noiseDist, signalModels, kernelgenerator;
+            showprogress)
 
 Select λ and ρ via a holdout process.
 
 # Arguments
+- `rng::AbstractRNG = Random.GLOBAL_RNG`: Random number generator to use
 - `N::Integer`: Number of test points
 - `T::Integer`: Number of training points
 - `λvals::AbstractVector{<:Real}`: Values of λ to search over \\[nλ\\]
@@ -49,6 +51,7 @@ Select λ and ρ via a holdout process.
 - `Ψ::AbstractMatrix{<:Real}`: Holdout costs for λvals and ρvals [nλ,nρ]
 """
 function holdout(
+    rng::AbstractRNG,
     N::Integer,
     T::Integer,
     λvals::AbstractVector{<:Real},
@@ -68,8 +71,8 @@ function holdout(
                                 "xDistsTrain should be the same"))
 
     # Generate synthetic test data
-    (y, x) = generatenoisydata(N, xDistsTest, noiseDist, signalModels)
-    (ytrain, xtrain) = generatenoisydata(T, xDistsTrain, noiseDist,
+    (y, x) = generatenoisydata(rng, N, xDistsTest, noiseDist, signalModels)
+    (ytrain, xtrain) = generatenoisydata(rng, T, xDistsTrain, noiseDist,
                                          signalModels)
 
     # Loop through each value of λ and ρ
@@ -99,7 +102,7 @@ function holdout(
             ρ = ρvals[idxρ]
 
             # Train PERK
-            trainData = PERK.krr_train(xtrain, ytrain, kernel, ρ)
+            trainData = PERK.krr_train(rng, xtrain, ytrain, kernel, ρ)
 
             # Run PERK
             xhat = perk(y, trainData, kernel) # [L,N]
@@ -122,6 +125,7 @@ function holdout(
 end
 
 function holdout(
+    rng::AbstractRNG,
     N::Integer,
     T::Integer,
     λvals::AbstractVector{<:Real},
@@ -148,10 +152,10 @@ function holdout(
                                 "should be the same"))
 
     # Generate synthetic test data and training data
-    (y, x, ν) = generatenoisydata(N, xDistsTest, νDistsTest, noiseDist,
+    (y, x, ν) = generatenoisydata(rng, N, xDistsTest, νDistsTest, noiseDist,
                                   signalModels)
-    (ytrain, xtrain, νtrain) = generatenoisydata(T, xDistsTrain, νDistsTrain,
-                                                 noiseDist, signalModels)
+    (ytrain, xtrain, νtrain) = generatenoisydata(rng, T, xDistsTrain,
+                                           νDistsTrain, noiseDist, signalModels)
 
     # Combine y and ν
     q = combine(y, ν) # [D+K,N]
@@ -180,7 +184,7 @@ function holdout(
             ρ = ρvals[idxρ]
 
             # Train PERK
-            trainData = PERK.krr_train(xtrain, qtrain, kernel, ρ)
+            trainData = PERK.krr_train(rng, xtrain, qtrain, kernel, ρ)
 
             # Run PERK
             xhat = perk(y, ν, trainData, kernel) # [L,N]
@@ -203,6 +207,7 @@ function holdout(
 end
 
 function holdout(
+    rng::AbstractRNG,
     N::Integer,
     T::Integer,
     λvals::AbstractVector{<:Real},
@@ -216,12 +221,14 @@ function holdout(
 )
 
     weights = [1]
-    holdout(N, T, λvals, ρvals, weights, [xDistsTest], [xDistsTrain], noiseDist,
-            signalModels, kernelgenerator, showprogress = showprogress)
+    holdout(rng, N, T, λvals, ρvals, weights, [xDistsTest], [xDistsTrain],
+            noiseDist, signalModels, kernelgenerator,
+            showprogress = showprogress)
 
 end
 
 function holdout(
+    rng::AbstractRNG,
     N::Integer,
     T::Integer,
     λvals::AbstractVector{<:Real},
@@ -237,8 +244,10 @@ function holdout(
 )
 
     weights = [1]
-    holdout(N, T, λvals, ρvals, weights, [xDistsTest], νDistsTest,
+    holdout(rng, N, T, λvals, ρvals, weights, [xDistsTest], νDistsTest,
             [xDistsTrain], νDistsTrain, noiseDist, signalModels,
             kernelgenerator, showprogress = showprogress)
 
 end
+
+holdout(N::Integer, args...) = holdout(Random.GLOBAL_RNG, N, args...)

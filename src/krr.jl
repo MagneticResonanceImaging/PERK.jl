@@ -6,11 +6,14 @@ using ForwardDiff: ForwardDiff
 
 
 """
-    krr_train(xtrain, ytrain, kernel, ρ, [f, phase])
+    krr_train([rng], xtrain, ytrain, kernel, ρ)
+    krr_train(xtrain, ytrain, kernel, ρ, f, phase)
 
 Train kernel ridge regression.
 
 # Arguments
+- `rng::AbstractRNG = Random.GLOBAL_RNG`: Random number generator to use
+  (only used when `kernel isa RFFKernel`)
 - `xtrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Latent
   parameters for training data [L,T] or \\[T\\] (if L = 1)
 - `ytrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}}`: Features
@@ -90,7 +93,22 @@ function krr_train(
 
 end
 
+# rng not used with ExactKernels
+# This method exists only to mirror how krr_train can be called with a RFFKernel
 function krr_train(
+    ::AbstractRNG,
+    xtrain,
+    ytrain,
+    kernel::ExactKernel,
+    ρ
+)
+
+    return krr_train(xtrain, ytrain, kernel, ρ)
+
+end
+
+function krr_train(
+    rng::AbstractRNG,
     xtrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     ytrain::Union{<:AbstractVector{<:Real},<:AbstractMatrix{<:Real}},
     kernel::RFFKernel,
@@ -98,9 +116,20 @@ function krr_train(
 )
 
     # Use random Fourier features to approximate the kernel
-    (z, freq, phase) = kernel(ytrain)
+    (z, freq, phase) = kernel(rng, ytrain)
 
     return _krr_train(xtrain, z, ρ, freq, phase)
+
+end
+
+function krr_train(
+    xtrain,
+    ytrain,
+    kernel::RFFKernel,
+    ρ
+)
+
+    return krr_train(Random.GLOBAL_RNG, xtrain, ytrain, kernel, ρ)
 
 end
 

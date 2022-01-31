@@ -35,7 +35,7 @@ end
 
 function test_complex_2()
 
-    Random.seed!(0)
+    rng = StableRNG(0)
     f = x -> complex(exp(-30 / x), exp(-30 / x))
     xtrue = 100
     y = f(xtrue)
@@ -46,10 +46,10 @@ function test_complex_2()
     λ = 2.0^-1.5
     kernel = GaussianKernel([λ * mean(y)])
     ρ = 2.0^-20
-    xhat = perk(y, T, xDists, noiseDist, signalModels, kernel, ρ)
+    xhat = perk(rng, y, T, xDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
-    return isapprox(error_rel, 0.03811058414712136, atol = 1e-6)
+    return error_rel ≈ 0.04464689602051635
 
 end
 
@@ -97,7 +97,7 @@ end
 
 function test_complex_4()
 
-    Random.seed!(0)
+    rng = StableRNG(0)
     f = (x, ν) -> complex(exp(-ν / x), exp(-ν / x))
     xtrue = 100
     ν = 30
@@ -111,11 +111,10 @@ function test_complex_4()
     λ = 2.0^-1.5
     kernel = GaussianKernel([λ * mean(y)], [λ * mean(ν)])
     ρ = 2.0^-20
-    xhat = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
+    xhat = perk(rng, y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
-#   return isapprox(error_rel, 0.03526687067013938, atol = 1e-6)
-    return isapprox(error_rel, 0.0548269513863977, atol = 1e-6)
+    return error_rel ≈ 0.05111009427971681
 
 end
 
@@ -184,7 +183,7 @@ end
 
 function test_complex_7()
 
-    Random.seed!(0)
+    rng = StableRNG(0)
     f = x -> complex(exp(-30 / x), exp(-30 / x))
     xtrue = 100
     y = f(xtrue)
@@ -196,10 +195,10 @@ function test_complex_7()
     H = 40
     kernel = GaussianRFF(H, [λ * mean(y)])
     ρ = 2.0^-20
-    xhat = perk(y, T, xDists, noiseDist, signalModels, kernel, ρ)
+    xhat = perk(rng, y, T, xDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
-    return isapprox(error_rel, 0.01699497197550329, atol = 1e-2)
+    return error_rel ≈ 0.02231978386441426
 
 end
 
@@ -249,7 +248,7 @@ end
 
 function test_complex_9()
 
-    Random.seed!(0)
+    rng = StableRNG(0)
     f = (x, ν) -> complex(exp(-ν / x), exp(-ν / x))
     xtrue = 100
     ν = 30
@@ -264,11 +263,10 @@ function test_complex_9()
     H = 40
     kernel = GaussianRFF(H, [λ * mean(y)], [λ * mean(ν)])
     ρ = 2.0^-20
-    xhat = perk(y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
+    xhat = perk(rng, y, ν, T, xDists, νDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat[] - xtrue) / xtrue
-#   return isapprox(error_rel, 0.0346180252991536, atol = 1e-2)
-    return isapprox(error_rel, 0.07455739429625595, atol = 1e-2)
+    return error_rel ≈ 0.06272802910855091
 
 end
 
@@ -310,6 +308,6 @@ end
     @test test_complex_7()
     @test test_complex_8()
     @test test_complex_9()
-    @test test_complex_10() broken = true # todo
+    @test test_complex_10() broken = true # TODO
 
 end

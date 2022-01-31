@@ -15,6 +15,8 @@ module PERK
 
 import ForwardDiff # ForwardDiff.Dual, ForwardDiff.partials, ForwardDiff.value
 using LinearAlgebra: I, Diagonal, norm
+using Random: AbstractRNG
+import Random # Random.GLOBAL_RNG
 using Statistics: mean
 
 include("utils.jl")

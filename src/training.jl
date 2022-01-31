@@ -113,11 +113,12 @@ Base.getproperty(data::RFFTrainingData, s::Symbol) = begin
 end
 
 """
-    train(T, xDists, [νDists,] noiseDist, signalModels, kernel, ρ)
+    train([rng], T, xDists, [νDists], noiseDist, signalModels, kernel, ρ)
 
 Train PERK using simulated training data.
 
 # Arguments
+- `rng::AbstractRNG = Random.GLOBAL_RNG`: Random number generator to use
 - `T::Integer`: Number of training points
 - `xDists`: Distributions of latent parameters \\[L\\] or scalar (if L = 1);
   `xDists` can be any object such that `rand(xDists, ::Integer)` is defined (or
@@ -140,6 +141,7 @@ Train PERK using simulated training data.
 - `trainData::TrainingData`: TrainingData object to be passed to `perk`
 """
 function train(
+    rng::AbstractRNG,
     T::Integer,
     xDists,
     noiseDist,
@@ -148,15 +150,16 @@ function train(
     ρ::Real
 )
 
-    (y, x) = generatenoisydata(T, xDists, noiseDist, signalModels)
+    (y, x) = generatenoisydata(rng, T, xDists, noiseDist, signalModels)
 
     eltype(y) <: Complex && (y = complex2real(y))
 
-    return krr_train(x, y, kernel, ρ)
+    return krr_train(rng, x, y, kernel, ρ)
 
 end
 
 function train(
+    rng::AbstractRNG,
     T::Integer,
     xDists,
     νDists,
@@ -166,13 +169,23 @@ function train(
     ρ::Real
 )
 
-    (y, x, ν) = generatenoisydata(T, xDists, νDists, noiseDist, signalModels)
+    (y, x, ν) = generatenoisydata(rng, T, xDists, νDists, noiseDist,
+        signalModels)
 
     eltype(y) <: Complex && (y = complex2real(y))
 
     q = combine(y, ν) # [D+K,T]
 
-    return krr_train(x, q, kernel, ρ)
+    return krr_train(rng, x, q, kernel, ρ)
+
+end
+
+function train(
+    T::Integer,
+    args...
+)
+
+    return train(Random.GLOBAL_RNG, T, args...)
 
 end
 
@@ -274,11 +287,12 @@ function combine(
 end
 
 """
-    generatenoisydata(N, xDists, [νDists,] noiseDist, signalModels)
+    generatenoisydata([rng], N, xDists, [νDists], noiseDist, signalModels)
 
 Generate noisy data from unknown (and possibly known) parameter distributions.
 
 # Arguments
+- `rng::AbstractRNG = Random.GLOBAL_RNG`: Random number generator to use
 - `N::Integer`: Number of data points
 - `xDists`: Distributions of latent parameters \\[L\\] or scalar (if L = 1);
   `xDists` can be any object such that `rand(xDists, ::Integer)` is defined (or
@@ -305,6 +319,7 @@ Generate noisy data from unknown (and possibly known) parameter distributions.
   `νDists` is omitted
 """
 function generatenoisydata(
+    rng::AbstractRNG,
     N::Integer,
     xDists,
     noiseDist,
@@ -313,15 +328,15 @@ function generatenoisydata(
 
     # Sample the distributions of latent parameters
     if xDists isa AbstractVector
-        x = rand.(xDists, N) # [L][N]
+        x = rand.(rng, xDists, N) # [L][N]
     else
-        x = rand(xDists, N) # [N]
+        x = rand(rng, xDists, N) # [N]
     end
 
     # Generate the data
     y = _evaluate_signalModels(x, signalModels)
     size(y, 1) == 1 && (y = vec(y)) # [N] (if D = 1)
-    addnoise!(y, noiseDist)
+    addnoise!(rng, y, noiseDist)
 
     # Reshape x
     xDists isa AbstractVector && (x = transpose(reduce(hcat, x))) # [L,N]
@@ -332,6 +347,7 @@ function generatenoisydata(
 end
 
 function generatenoisydata(
+    rng::AbstractRNG,
     N::Integer,
     xDists,
     νDists,
@@ -341,20 +357,20 @@ function generatenoisydata(
 
     # Sample the distributions of latent and known parameters
     if xDists isa AbstractVector
-        x = rand.(xDists, N) # [L][N]
+        x = rand.(rng, xDists, N) # [L][N]
     else
-        x = rand(xDists, N) # [N]
+        x = rand(rng, xDists, N) # [N]
     end
     if νDists isa AbstractVector
-        ν = rand.(νDists, N) # [K][N]
+        ν = rand.(rng, νDists, N) # [K][N]
     else
-        ν = rand(νDists, N) # [N]
+        ν = rand(rng, νDists, N) # [N]
     end
 
     # Generate the data
     y = _evaluate_signalModels(x, ν, signalModels)
     size(y, 1) == 1 && (y = vec(y)) # [N] (if D = 1)
-    addnoise!(y, noiseDist)
+    addnoise!(rng, y, noiseDist)
 
     # Reshape x and ν
     xDists isa AbstractVector && (x = transpose(reduce(hcat, x))) # [L,N]
@@ -362,6 +378,15 @@ function generatenoisydata(
 
     # Return simulated data and random latent and known parameters
     return (y, x, ν)
+
+end
+
+function generatenoisydata(
+    N::Integer,
+    args...
+)
+
+    return generatenoisydata(Random.GLOBAL_RNG, N, args...)
 
 end
 
@@ -440,18 +465,21 @@ _hcat(x::AbstractVector{<:AbstractVector}) = reduce(hcat, x)
 _hcat(x::AbstractVector) = x
 
 """
-    addnoise!(y, noiseDist)
+    addnoise!([rng], y, noiseDist)
 
 Add noise to `y`. If elements of `y` are complex-valued, then add independent
 noise to both the real and imaginary parts of `y`.
 """
-function addnoise!(y, noiseDist)
+function addnoise!(rng, y, noiseDist)
 
     if eltype(y) <: Complex
-        n = complex.(rand(noiseDist, size(y)...), rand(noiseDist, size(y)...))
+        n = complex.(rand(rng, noiseDist, size(y)...),
+                     rand(rng, noiseDist, size(y)...))
     else
-        n = rand(noiseDist, size(y)...) # [D,N]
+        n = rand(rng, noiseDist, size(y)...) # [D,N]
     end
     y .+= n # [D,N]
 
 end
+
+addnoise!(y, noiseDist) = addnoise!(Random.GLOBAL_RNG, y, noiseDist)
