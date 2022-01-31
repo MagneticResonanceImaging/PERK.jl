@@ -125,8 +125,8 @@ function test_krr_5()
     # (results not used)
     PERK.krr_train(xtrain, ytrain, kernel, ρ)
     generatenoisydata(T, xDists, noiseDist, signalModels)
-    PERK.addnoise!(y, noiseDist)
-    train(T, xDists, noiseDist, signalModels, kernel, ρ)
+    PERK.addnoise!([y], noiseDist)
+    PERK.train(T, xDists, noiseDist, signalModels, kernel, ρ)
 
     error_rel = abs(xhat - xtrue) / xtrue
     # For line coverage, access Q, L, and H in trainData as well
