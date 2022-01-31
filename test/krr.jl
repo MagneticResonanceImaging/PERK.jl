@@ -119,7 +119,7 @@ function test_krr_5()
 
     error_rel = abs(xhat - xtrue) / xtrue
     # For line coverage, access Q, L, and H in trainData as well
-    return error_rel ≈ 0.07054474887124201 &&
+    return isapprox(error_rel, 0.07054474887124201, atol = 1e-7) &&
            trainData.Q == length(y) &&
            trainData.L == length(xtrue) &&
            trainData.H == H
@@ -146,7 +146,7 @@ function test_krr_6()
     xhat = PERK.krr(y, trainData, kernel)
 
     error_rel = abs(xhat - xtrue) / xtrue
-    return error_rel ≈ 0.07054474887124201
+    return isapprox(error_rel, 0.07054474887124201, atol = 1e-7)
 
 end
 
