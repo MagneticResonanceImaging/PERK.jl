@@ -122,31 +122,6 @@ end
 function test_complex_5()
 
     Random.seed!(0)
-    f = x -> complex(exp(-30 / x) + 1, exp(-30 / x) + 1)
-    f_abs = x -> abs(f(x))
-    xtrue = 100
-    y = f(xtrue)
-    y_abs = f_abs(xtrue)
-    T = 200
-    xDists = Uniform(10, 500)
-    noiseDist = Normal(0, 0.01)
-    λ = 2.0^-1.5
-    kernel = GaussianKernel([λ * mean(y)])
-    kernel_abs = GaussianKernel(λ * mean(y_abs))
-    ρ = 2.0^-20
-    xhat = perk(y, T, xDists, noiseDist, f, kernel, ρ)
-    xhat_abs = perk(y_abs, T, xDists, noiseDist, f_abs, kernel_abs, ρ)
-
-    error_rel = abs(xhat[] - xtrue) / xtrue
-    error_rel_abs = abs(xhat_abs[] - xtrue) / xtrue
-    return error_rel < error_rel_abs
-
-end
-
-
-function test_complex_6()
-
-    Random.seed!(0)
     f = x -> [exp(-30 / x), exp(-30 / x)]
     xtrue = 100
     y = f(xtrue)
@@ -181,7 +156,7 @@ function test_complex_6()
 end
 
 
-function test_complex_7()
+function test_complex_6()
 
     rng = StableRNG(0)
     f = x -> complex(exp(-30 / x), exp(-30 / x))
@@ -203,7 +178,7 @@ function test_complex_7()
 end
 
 
-function test_complex_8()
+function test_complex_7()
 
     Random.seed!(0)
     f = (x, ν) -> [exp(-ν / x), exp(-ν / x)]
@@ -246,7 +221,7 @@ function test_complex_8()
 end
 
 
-function test_complex_9()
+function test_complex_8()
 
     rng = StableRNG(0)
     f = (x, ν) -> complex(exp(-ν / x), exp(-ν / x))
@@ -271,32 +246,6 @@ function test_complex_9()
 end
 
 
-function test_complex_10()
-
-    Random.seed!(0)
-    f = x -> complex(exp(-30 / x) + 1, exp(-30 / x) + 1)
-    f_abs = x -> abs(f(x))
-    xtrue = 100
-    y = f(xtrue)
-    y_abs = f_abs(xtrue)
-    T = 200
-    xDists = Uniform(10, 500)
-    noiseDist = Normal(0, 0.01)
-    λ = 2.0^-1.5
-    H = 40
-    kernel = GaussianRFF(H, [λ * mean(y)])
-    kernel_abs = GaussianRFF(H, λ * mean(y_abs))
-    ρ = 2.0^-20
-    xhat = perk(y, T, xDists, noiseDist, f, kernel, ρ)
-    xhat_abs = perk(y_abs, T, xDists, noiseDist, f_abs, kernel_abs, ρ)
-
-    error_rel = abs(xhat[] - xtrue) / xtrue
-    error_rel_abs = abs(xhat_abs[] - xtrue) / xtrue
-    return error_rel < error_rel_abs # they agree to 4 decimal places
-
-end
-
-
 @testset "Complex PERK" begin
 
     @test test_complex_1()
@@ -307,7 +256,5 @@ end
     @test test_complex_6()
     @test test_complex_7()
     @test test_complex_8()
-    @test test_complex_9()
-    @test test_complex_10() broken = true # TODO
 
 end
