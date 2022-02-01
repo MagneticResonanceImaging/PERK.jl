@@ -43,8 +43,8 @@ using InteractiveUtils: versioninfo
 Although neural networks are very popular,
 low-dimensional nonlinear regression problems
 can be handled quite efficiently
-by kernel regression (KR).
-Training KR does not require iterative algorithms
+by kernel ridge regression (KRR).
+Training KRR does not require iterative algorithms
 and is more interpretable than a deep network.
 It is simply a nonlinear lifting
 followed by ridge regression.
@@ -53,7 +53,7 @@ followed by ridge regression.
 #=
 ### Example
 
-Here is an example of using KR
+Here is an example of using KRR
 to learn the function ``y = x^3``
 from noisy training data.
 =#
@@ -76,7 +76,7 @@ train = PERK.krr_train(ytrain, xtrain, kernel, ρ);
 # and regresses to the mean outside of that range.
 xtest = LinRange(-1, 1, 200) * 4
 yhat = PERK.krr(xtest, train, kernel) # todo: remove kernel eventually
-plot!(p0, xtest, yhat, label="KR prediction", color=:magenta)
+plot!(p0, xtest, yhat, label="KRR prediction", color=:magenta)
 
 
 # The (only!) two parameters ρ and λ can be selected automatically
