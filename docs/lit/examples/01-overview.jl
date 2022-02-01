@@ -26,10 +26,12 @@ This page was generated from a single Julia file:
 # Packages needed here.
 
 using PERK
+using MIRTjim: jim, prompt
+using Plots; default(markerstrokecolor = :auto, label="")
 using InteractiveUtils: versioninfo
 
 
-#src The following line is helpful when running this example.jl file as a script;
+#src The following line is helpful when running this file as a script;
 #src this way it will prompt user to hit a key after each figure is displayed.
 
 #src isinteractive() ? jim(:prompt, true) : prompt(:draw);
@@ -38,11 +40,51 @@ using InteractiveUtils: versioninfo
 # ### Overview
 
 #=
-todo
+Although neural networks are very popular,
+low-dimensional nonlinear regression problems
+can be handled quite efficiently
+by kernel ridge regression (KRR).
+Training KRR does not require iterative algorithms
+and is more interpretable than a deep network.
+It is simply a nonlinear lifting
+followed by ridge regression.
 =#
 
+#=
+### Example
 
-# ## Reproducibility
+Here is an example of using KRR
+to learn the function ``y = x^3``
+from noisy training data.
+=#
+
+fun(x) = x^3
+xtrain = LinRange(-1, 1, 101) * 3
+ytrain = fun.(xtrain) + 1 * randn(size(xtrain))
+p0 = scatter(xtrain, ytrain, xlabel="x", ylabel="y", label="training data")
+plot!(p0, fun, label="y = x^3", legend=:top, color=:black)
+
+# Here is the key training step
+ρ = 1e-5
+λ = 0.5
+kernel = GaussianKernel(λ)
+train = PERK.krr_train(ytrain, xtrain, kernel, ρ);
+#src jim(train.K, "PERK K")
+
+# Now examine the fit using (exhaustive) test data.
+# The fit is very good within the range of the training data,
+# and regresses to the mean outside of that range.
+xtest = LinRange(-1, 1, 200) * 4
+yhat = PERK.krr(xtest, train, kernel) # todo: remove kernel eventually
+plot!(p0, xtest, yhat, label="KRR prediction", color=:magenta)
+
+
+# The (only!) two parameters ρ and λ can be selected automatically
+# using cross validation.
+# todo: need example here
+
+
+# ### Reproducibility
 
 # This page was generated with the following version of Julia:
 
