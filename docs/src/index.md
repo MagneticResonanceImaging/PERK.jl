@@ -25,4 +25,4 @@ see
 and
 [its associated code](https://github.com/StevenWhitaker/STFR-MWF).
 
-Also see the Example(s) tab.
+Also see the "Examples".
