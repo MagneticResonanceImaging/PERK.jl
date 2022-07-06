@@ -1,9 +1,7 @@
 execute = isempty(ARGS) || ARGS[1] == "run"
 
-#using Pkg
-#Pkg.add(url="https://github.com/StevenWhitaker/PERK.jl")
-
-using PERK
+org, reps = :StevenWhitaker, :PERK
+eval(:(using $reps))
 using Documenter
 using Literate
 
@@ -16,7 +14,7 @@ lit = joinpath(@__DIR__, "lit")
 src = joinpath(@__DIR__, "src")
 gen = joinpath(@__DIR__, "src/generated")
 
-base = "StevenWhitaker/PERK.jl"
+base = "$org/$reps.jl"
 repo_root_url =
     "https://github.com/$base/blob/main/docs/lit/examples"
 nbviewer_root_url =
@@ -25,7 +23,8 @@ binder_root_url =
     "https://mybinder.org/v2/gh/$base/gh-pages?filepath=dev/generated/examples"
 
 
-DocMeta.setdocmeta!(PERK, :DocTestSetup, :(using PERK); recursive=true)
+repo = eval(:($reps))
+DocMeta.setdocmeta!(repo, :DocTestSetup, :(using $reps); recursive=true)
 
 for (root, _, files) in walkdir(lit), file in files
     splitext(file)[2] == ".jl" || continue # process .jl files only
@@ -48,14 +47,14 @@ isci = get(ENV, "CI", nothing) == "true"
 format = Documenter.HTML(;
     prettyurls = isci,
     edit_link = "main",
-    canonical = "https://StevenWhitaker.github.io/PERK.jl/stable",
-#   assets = String[],
+    canonical = "https://$org.github.io/$repo.jl/stable/",
+    assets = ["assets/custom.css"],
 )
 
 makedocs(;
-    modules = [PERK],
+    modules = [repo],
     authors = "Steven Whitaker and contributors",
-    sitename = "PERK.jl",
+    sitename = "$repo.jl",
     format,
     pages = [
         "Home" => "index.md",
@@ -66,7 +65,7 @@ makedocs(;
 
 if isci
     deploydocs(;
-        repo = "github.com/StevenWhitaker/PERK.jl.git",
+        repo = "github.com/$base",
         devbranch = "main",
         devurl = "dev",
         versions = ["stable" => "v^", "dev" => "dev"],
