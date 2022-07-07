@@ -26,16 +26,16 @@ This page was generated from a single Julia file:
 # Packages needed here.
 
 using PERK: GaussianKernel, krr_train, krr
-#src using MIRTjim: jim, prompt
+using MIRTjim: jim, prompt
 using Random: randperm, seed!; seed!(0)
 using Plots; default(markerstrokecolor = :auto, label="")
 using InteractiveUtils: versioninfo
 
 
-#src The following line is helpful when running this file as a script;
-#src this way it will prompt user to hit a key after each figure is displayed.
+# The following line is helpful when running this file as a script;
+# this way it will prompt user to hit a key after each figure is displayed.
 
-#src isinteractive() ? jim(:prompt, true) : prompt(:draw);
+isinteractive() ? jim(:prompt, true) : prompt(:draw);
 
 
 # ### Overview
@@ -71,7 +71,9 @@ plot!(p0, fun, label="y = x^3", legend=:top, color=:black; xlims, ylims)
 λ = 0.5
 kernel = GaussianKernel(λ)
 train = krr_train(ytrain, xtrain, kernel, ρ);
-#src jim(train.K, "PERK K")
+
+# Here is the (demeaned) kernel matrix
+jim(train.K, "PERK K") # todo
 
 
 # Now examine the fit using (exhaustive) test data.
@@ -81,6 +83,10 @@ xtest = LinRange(-1, 1, 200) * 4
 yhat = krr(xtest, train, kernel) # todo: remove kernel eventually
 p1 = deepcopy(p0)
 plot!(p1, xtest, yhat, label="KRR prediction", color=:magenta)
+
+
+#
+prompt()
 
 
 #=
@@ -103,6 +109,9 @@ yhat2 = krr(xtest, train2, kernel2)
 p2 = deepcopy(p0)
 plot!(p2, xtest, yhat2, label="KRR prediction", color=:magenta)
 
+#
+prompt()
+
 
 #=
 Conversely,
@@ -116,6 +125,9 @@ train3 = krr_train(ytrain, xtrain, kernel3, ρ3);
 yhat3 = krr(xtest, train3, kernel3)
 p3 = deepcopy(p0)
 plot!(p3, xtest, yhat3, label="KRR prediction", color=:magenta)
+
+#
+prompt()
 
 
 #=
@@ -141,6 +153,9 @@ p4 = scatter(xfit, yfit;
     xlabel="x", ylabel="y", label="fitting data", color=:blue)
 scatter!(p4, xvalidate, yvalidate, label="validation data", color=:violet)
 plot!(p4, fun, label="y = x^3", legend=:top, color=:black; xlims, ylims)
+
+#
+prompt()
 
 
 # Function to evaluate the NRMSE for the validation data
@@ -171,6 +186,9 @@ heatmap(log2.(ρtry), log10.(λtry), fits';
 scatter!([l2ρ], [l10λ], color=:green, marker=:star,
     label="best at log2(ρ)=$l2ρ log10(λ)=$l10λ")
 
+#
+prompt()
+
 
 #=
 Profiles through the NRMSE across the minimum.
@@ -187,6 +205,9 @@ p6 = plot(log10.(λtry), fits[best[1],:];
 scatter!([l10λ], [fits[best]], marker=:star, color=:red)
 plot(p5, p6, plot_title="Profiles")
 
+#
+prompt()
+
 
 # Here is the fit with the optimized parameters.
 # The fit is remarkably good and also happens to extrapolate well.
@@ -197,6 +218,9 @@ yhatb = krr(xtest, trainb, kernelb)
 p7 = deepcopy(p0)
 plot!(p7, xtest, yhatb;
     label="KRR prediction after CV", color=:magenta, ylims=(-1,1).*50)
+
+#
+prompt()
 
 
 # ### Reproducibility
