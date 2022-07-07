@@ -72,8 +72,8 @@ plot!(p0, fun, label="y = x^3", legend=:top, color=:black; xlims, ylims)
 kernel = GaussianKernel(λ)
 train = krr_train(ytrain, xtrain, kernel, ρ);
 
-# Here is the (demeaned) kernel matrix
-jim(train.K, "PERK K") # todo
+# Here is the (demeaned) kernel matrix K
+jim(train.K, "PERK K matrix")
 
 
 # Now examine the fit using (exhaustive) test data.
