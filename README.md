@@ -1,9 +1,9 @@
 # PERK.jl
 
-https://github.com/StevenWhitaker/PERK.jl
+https://github.com/MagneticResonanceImaging/PERK.jl
 
-[![action status](https://github.com/StevenWhitaker/PERK.jl/actions/workflows/runtests.yml/badge.svg)](https://github.com/StevenWhitaker/PERK.jl/actions)
-[![codecov](https://codecov.io/gh/StevenWhitaker/PERK.jl/branch/main/graph/badge.svg?token=qnZeOeEuBM)](https://codecov.io/gh/StevenWhitaker/PERK.jl)
+[![action status][action-img]][action-url]
+[![codecov][codecov-img]][codecov-url]
 [![license][license-img]][license-url]
 [![docs stable][docs-stable-img]][docs-stable-url]
 [![docs dev][docs-dev-img]][docs-dev-url]
@@ -15,9 +15,9 @@ which can be found [here](https://github.com/gopal-nataraj/perk).
 
 ## Getting Started
 At the Julia REPL, type `]` to enter the package prompt.
-Then type `add https://github.com/StevenWhitaker/PERK.jl#v0.2.0`
-to add PERK v0.2.0
-(note that `v0.2.0` can be replaced with whatever version is needed).
+Then type `add https://github.com/StevenWhitaker/PERK.jl`
+to add the latest version.
+(Append `#v0.3.2` to specify a specific version.)
 Hit backspace to return to the normal Julia prompt,
 and then type `using PERK` to load the package.
 
@@ -47,11 +47,35 @@ that can be passed to `PERK.krr`.
 As with `perk`,
 both `PERK.krr_train` and `PERK.krr` must be passed a `Kernel` object.
 
+## Related packages
+
+These are more general and not MRI specific.
+- https://github.com/JuliaGaussianProcesses/KernelFunctions.jl
+  [an example](https://juliagaussianprocesses.github.io/KernelFunctions.jl/dev/examples/kernel-ridge-regression)
+- https://github.com/gdkrmr/KernelRidgeRegression.jl
+
+
+## Status
+
+This repo is not yet registered in part because its name
+does not meet
+[Julia naming guidelines](https://pkgdocs.julialang.org/v1/creating-packages/#Package-naming-guidelines).
+If you want to be registered,
+please post an issue and suggest a name.
+
+On 2024-04-08,
+the package was relocated here from
+https://github.com/StevenWhitaker/PERK.jl
+Some links may be broken by this transition.
 
 <!-- URLs -->
+[action-img]: https://github.com/MagneticResonanceImaging/PERK.jl/workflows/runtests/badge.svg
+[action-url]: https://github.com/MagneticResonanceImaging/PERK.jl/actions
+[codecov-img]: (https://codecov.io/github/MagneticResonanceImaging/PERK.jl/coverage.svg?branch=main
+[codecov-url]: https://codecov.io/github/MagneticResonanceImaging/PERK.jl?branch=main
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-stable-url]: https://StevenWhitaker.github.io/PERK.jl/stable
+[docs-stable-url]: https://MagneticResonanceImaging.github.io/PERK.jl/stable
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
-[docs-dev-url]: https://StevenWhitaker.github.io/PERK.jl/dev
+[docs-dev-url]: https://MagneticResonanceImaging.github.io/PERK.jl/dev
 [license-img]: http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat
 [license-url]: LICENSE
