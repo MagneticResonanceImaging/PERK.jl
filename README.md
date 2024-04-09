@@ -15,7 +15,7 @@ which can be found [here](https://github.com/gopal-nataraj/perk).
 
 ## Getting Started
 At the Julia REPL, type `]` to enter the package prompt.
-Then type `add https://github.com/StevenWhitaker/PERK.jl`
+Then type `add https://github.com/MagneticResonanceImaging/PERK.jl`
 to add the latest version.
 (Append `#v0.3.2` to specify a specific version.)
 Hit backspace to return to the normal Julia prompt,
