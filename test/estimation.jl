@@ -3,6 +3,7 @@ using Distributions: Uniform, Normal
 using Statistics: mean
 using LinearAlgebra: norm
 using PERK: perk, GaussianKernel, EuclideanKernel, GaussianRFF
+using StableRNGs: StableRNG
 
 
 function test_perk_1()
@@ -47,7 +48,8 @@ function test_perk_2()
     end
 
     error_rel_avg = sum(error_rel) / length(error_rel)
-    return isapprox(error_rel_avg, 0.043934535569840415, atol = 1e-7)
+    ref = VERSION < v"1.10" ? 0.043934535569840415 : 0.04400107950561938
+    return isapprox(error_rel_avg, ref, atol = 1e-7)
 
 end
 
@@ -96,7 +98,9 @@ function test_perk_4()
     end
 
     error_rel_avg = sum(error_rel) / length(error_rel)
-    return isapprox(error_rel_avg, 0.05827088471817421, atol = 1e-7)
+    ref = VERSION < v"1.10" ? 0.05827088471817421 : 0.05822451811335079
+
+    return isapprox(error_rel_avg, ref, atol = 1e-7)
 
 end
 
@@ -282,7 +286,6 @@ function test_perk_12()
     return isapprox(error_rel, 0.06038422720189351, atol = 1e-7)
 
 end
-
 
 @testset "PERK" begin
 
