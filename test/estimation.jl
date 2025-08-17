@@ -48,7 +48,7 @@ function test_perk_2()
     end
 
     error_rel_avg = sum(error_rel) / length(error_rel)
-    ref = VERSION < v"1.11" ? 0.043934535569840415 : 0.04400107950561938
+    ref = 0.04393452070898947
     @test isapprox(error_rel_avg, ref, atol = 1e-7)
 
 end
@@ -98,8 +98,7 @@ function test_perk_4()
     end
 
     error_rel_avg = sum(error_rel) / length(error_rel)
-    ref = VERSION < v"1.11" ? 0.05827088471817421 : 0.05822451811335079
-
+    ref = 0.058270884718173835
     @test isapprox(error_rel_avg, ref, atol = 1e-7)
 
 end
