@@ -2,8 +2,8 @@ execute = isempty(ARGS) || ARGS[1] == "run"
 
 org, reps = :StevenWhitaker, :PERK
 eval(:(using $reps))
-using Documenter
-using Literate
+import Documenter
+import Literate
 
 # https://juliadocs.github.io/Documenter.jl/stable/man/syntax/#@example-block
 ENV["GKSwstype"] = "100"
@@ -30,10 +30,14 @@ for (root, _, files) in walkdir(lit), file in files
     splitext(file)[2] == ".jl" || continue # process .jl files only
     ipath = joinpath(root, file)
     opath = splitdir(replace(ipath, lit => gen))[1]
-    Literate.markdown(ipath, opath, documenter = execute; # run examples
-        repo_root_url, nbviewer_root_url, binder_root_url)
-    Literate.notebook(ipath, opath; execute = false, # no-run notebooks
-        repo_root_url, nbviewer_root_url, binder_root_url)
+    Literate.markdown(ipath, opath;'
+        repo_root_url,
+        nbviewer_root_url, binder_root_url)
+        documenter = execute; # run examples
+    Literate.notebook(ipath, opath;
+        execute = false, # no-run notebooks
+        repo_root_url, nbviewer_root_url, binder_root_url,
+    )
 end
 
 
@@ -51,7 +55,7 @@ format = Documenter.HTML(;
     assets = ["assets/custom.css"],
 )
 
-makedocs(;
+Documenter.makedocs(;
     modules = [repo],
     authors = "Steven Whitaker and contributors",
     sitename = "$repo.jl",
@@ -64,12 +68,13 @@ makedocs(;
 )
 
 if isci
-    deploydocs(;
+    Documenter.deploydocs(;
         repo = "github.com/$base",
         devbranch = "main",
         devurl = "dev",
         versions = ["stable" => "v^", "dev" => "dev"],
         forcepush = true,
-#       push_preview = true,
+        push_preview = true,
+        # see https://$org.github.io/$repo.jl/previews/PR##
     )
 end
