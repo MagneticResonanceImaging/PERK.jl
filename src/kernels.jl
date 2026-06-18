@@ -135,9 +135,9 @@ struct GaussianKernel{T<:Union{<:Real,<:AbstractVector{<:Real}}} <: ExactKernel
 end
 
 """
-    GuassianKernel(Λy, [Λν])
+    GaussianKernel(Λy, [Λν])
 
-Create a Guassian kernel function.
+Create a Gaussian kernel function.
 
 # Arguments
 - `Λy::Union{<:Number,<:AbstractVector{<:Number}}`: Length scales for features
