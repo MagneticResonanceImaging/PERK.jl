@@ -311,7 +311,7 @@ struct GaussianRFF{T1<:Integer,T2<:Union{<:Real,<:AbstractVector{<:Real}}} <: RF
 end
 
 """
-    GuassianRFF(H, Λy, [Λν])
+    GaussianRFF(H, Λy, [Λν])
 
 Create an approximate (via random Fourier features) Gaussian kernel function.
 
