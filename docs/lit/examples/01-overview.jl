@@ -15,8 +15,9 @@ This page illustrates the Julia package
 using InteractiveUtils: versioninfo
 using MIRTjim: jim, prompt
 using PERK: GaussianKernel, krr_train, krr
-using Plots; default(markerstrokecolor = :auto, label="")
-using Random: randperm, seed!; seed!(0)
+using Plots: default, heatmap, plot, plot!, scatter, scatter!
+using Random: randperm, seed!; seed!(0);
+default(markerstrokecolor = :auto, label="")
 
 
 # The following line is helpful when running this file as a script;
@@ -154,7 +155,7 @@ function fitmse(ρ, λ)
     train = krr_train(yfit, xfit, kernel, ρ) # train with "fit" data
     yhat = krr(xvalidate, train, kernel) # test with "validation" data
     return sqrt(sum(abs2, yhat - yvalidate) / sum(abs2, yvalidate)) # NRMSE
-end
+end;
 
 # Use broadcast to evaluate the NRMSE for a grid of ρ,λ values.
 ρtry = 2. .^ (-32:4)
