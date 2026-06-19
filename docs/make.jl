@@ -1,6 +1,6 @@
 execute = isempty(ARGS) || ARGS[1] == "run"
 
-org, reps = :StevenWhitaker, :PERK
+org, reps = :MagneticResonanceImaging, :PERK
 eval(:(using $reps))
 import Documenter
 import Literate
