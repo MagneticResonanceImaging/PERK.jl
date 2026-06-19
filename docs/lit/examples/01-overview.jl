@@ -1,35 +1,23 @@
-#---------------------------------------------------------
-# # [PERK overview](@id 01-overview)
-#---------------------------------------------------------
-
 #=
-This page illustrates the Julia package
-[`PERK`](https://github.com/StevenWhitaker/PERK.jl).
+# [PERK overview](@id 01-overview)
 
-This page was generated from a single Julia file:
-[01-overview.jl](@__REPO_ROOT_URL__/01-overview.jl).
+This page illustrates the Julia package
+[`PERK`](https://github.com/MagneticResonanceImaging/PERK.jl).
 =#
 
-#md # In any such Julia documentation,
-#md # you can access the source code
-#md # using the "Edit on GitHub" link in the top right.
-
-#md # The corresponding notebook can be viewed in
-#md # [nbviewer](http://nbviewer.jupyter.org/) here:
-#md # [`01-overview.ipynb`](@__NBVIEWER_ROOT_URL__/01-overview.ipynb),
-#md # and opened in [binder](https://mybinder.org/) here:
-#md # [`01-overview.ipynb`](@__BINDER_ROOT_URL__/01-overview.ipynb).
+#srcURL
 
 
 # ### Setup
 
 # Packages needed here.
 
-using PERK: GaussianKernel, krr_train, krr
-using MIRTjim: jim, prompt
-using Random: randperm, seed!; seed!(0)
-using Plots; default(markerstrokecolor = :auto, label="")
 using InteractiveUtils: versioninfo
+using MIRTjim: jim, prompt
+using PERK: GaussianKernel, krr_train, krr
+using Plots: default, heatmap, plot, plot!, scatter, scatter!
+using Random: randperm, seed!; seed!(0);
+default(markerstrokecolor = :auto, label="")
 
 
 # The following line is helpful when running this file as a script;
@@ -38,9 +26,9 @@ using InteractiveUtils: versioninfo
 isinteractive() ? jim(:prompt, true) : prompt(:draw);
 
 
-# ### Overview
-
 #=
+## Overview
+
 Although neural networks are very popular,
 low-dimensional nonlinear regression problems
 can be handled quite efficiently
@@ -51,7 +39,7 @@ It is simply a nonlinear lifting
 followed by ridge regression.
 
 
-### Example
+## Example
 
 Here is an example of using KRR
 to learn the function ``y = x^3``
@@ -76,9 +64,11 @@ train = krr_train(ytrain, xtrain, kernel, ρ);
 jim(train.K, "PERK K matrix")
 
 
-# Now examine the fit using (exhaustive) test data.
-# The fit is very good within the range of the training data,
-# and regresses to the mean outside of that range.
+#=
+Now examine the fit using (exhaustive) test data.
+The fit is very good within the range of the training data,
+and regresses to the mean outside of that range.
+=#
 xtest = LinRange(-1, 1, 200) * 4
 yhat = krr(xtest, train, kernel) # todo: remove kernel eventually
 p1 = deepcopy(p0)
@@ -90,10 +80,10 @@ prompt()
 
 
 #=
-### Parameter tuning
+## Parameter tuning
 
-PERK has only two tuning parameters: `ρ` and `λ`
-and one can select automatically
+PERK has only two tuning parameters: `ρ` and `λ`.
+One can select them automatically
 using cross validation.
 
 To illustrate the importance of selecting these parameters properly,
@@ -131,7 +121,7 @@ prompt()
 
 
 #=
-### Cross validation
+## Cross validation
 
 One way to apply cross validation
 to select automatically
@@ -165,7 +155,7 @@ function fitmse(ρ, λ)
     train = krr_train(yfit, xfit, kernel, ρ) # train with "fit" data
     yhat = krr(xvalidate, train, kernel) # test with "validation" data
     return sqrt(sum(abs2, yhat - yvalidate) / sum(abs2, yvalidate)) # NRMSE
-end
+end;
 
 # Use broadcast to evaluate the NRMSE for a grid of ρ,λ values.
 ρtry = 2. .^ (-32:4)

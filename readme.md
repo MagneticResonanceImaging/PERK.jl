@@ -2,11 +2,15 @@
 
 https://github.com/MagneticResonanceImaging/PERK.jl
 
-[![action status][action-img]][action-url]
+[![docs-stable][docs-stable-img]][docs-stable-url]
+[![docs-dev][docs-dev-img]][docs-dev-url]
+[![action][action-img]][action-url]
+[![Aqua QA][aqua-img]][aqua-url]
 [![codecov][codecov-img]][codecov-url]
+<!-- [![deps][deps-img]][deps-url] -->
 [![license][license-img]][license-url]
-[![docs stable][docs-stable-img]][docs-stable-url]
-[![docs dev][docs-dev-img]][docs-dev-url]
+<!-- [![pkgeval][pkgeval-img]][pkgeval-url] -->
+[![version][ver-img]][ver-url]
 
 This package implements PERK, a parameter estimation technique presented in
 [G. Nataraj, J.-F. Nielsen, C. Scott, and J. A. Fessler. Dictionary-free MRI PERK: Parameter estimation via regression with kernels. IEEE Trans. Med. Imag., 37(9):2103-14, September 2018](https://ieeexplore.ieee.org/document/8320384/).
@@ -71,11 +75,26 @@ Some links may be broken by this transition.
 <!-- URLs -->
 [action-img]: https://github.com/MagneticResonanceImaging/PERK.jl/workflows/runtests/badge.svg
 [action-url]: https://github.com/MagneticResonanceImaging/PERK.jl/actions
+
+[aqua-img]: https://juliatesting.github.io/Aqua.jl/dev/assets/badge.svg
+[aqua-url]: https://github.com/JuliaTesting/Aqua.jl
+
 [codecov-img]: (https://codecov.io/github/MagneticResonanceImaging/PERK.jl/coverage.svg?branch=main
 [codecov-url]: https://codecov.io/github/MagneticResonanceImaging/PERK.jl?branch=main
-[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-stable-url]: https://MagneticResonanceImaging.github.io/PERK.jl/stable
+
+[deps-img]: https://juliahub.com/docs/PERK/deps.svg
+[deps-url]: https://juliahub.com/ui/Packages/PERK
+
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
 [docs-dev-url]: https://MagneticResonanceImaging.github.io/PERK.jl/dev
-[license-img]: http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat
+[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-stable-url]: https://MagneticResonanceImaging.github.io/PERK.jl/stable
+
+[license-img]: https://img.shields.io/badge/license-MIT-brightgreen.svg
 [license-url]: LICENSE
+
+[pkgeval-img]: https://juliaci.github.io/NanosoldierReports/pkgeval_badges/P/PERK.svg
+[pkgeval-url]: https://juliaci.github.io/NanosoldierReports/pkgeval_badges/P/PERK.html
+
+[ver-img]: https://juliahub.com/docs/PERK/version.svg
+[ver-url]: https://juliahub.com/ui/Packages/PERK

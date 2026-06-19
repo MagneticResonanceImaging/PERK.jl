@@ -135,9 +135,9 @@ struct GaussianKernel{T<:Union{<:Real,<:AbstractVector{<:Real}}} <: ExactKernel
 end
 
 """
-    GuassianKernel(Λy, [Λν])
+    GaussianKernel(Λy, [Λν])
 
-Create a Guassian kernel function.
+Create a Gaussian kernel function.
 
 # Arguments
 - `Λy::Union{<:Number,<:AbstractVector{<:Number}}`: Length scales for features
@@ -311,7 +311,7 @@ struct GaussianRFF{T1<:Integer,T2<:Union{<:Real,<:AbstractVector{<:Real}}} <: RF
 end
 
 """
-    GuassianRFF(H, Λy, [Λν])
+    GaussianRFF(H, Λy, [Λν])
 
 Create an approximate (via random Fourier features) Gaussian kernel function.
 

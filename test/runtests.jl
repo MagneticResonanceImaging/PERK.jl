@@ -8,6 +8,7 @@ using Statistics
 using Test
 
 @testset "PERK.jl" begin
+    include("aqua.jl")
     include("kernels.jl")
     include("krr.jl")
     include("estimation.jl")
